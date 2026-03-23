@@ -1,24 +1,21 @@
-import { Router } from 'express';
-import * as riderController from '../controllers/rider.controller';
+import { Router } from "express";
+import { protect, restrictTo } from "../middleware/auth.middleware";
+import { validateCreateRider } from "../middleware/validate.middleware";
+import * as riderController from "../controllers/rider.controller";
 
 const router = Router();
 
-// GET /api/v1/riders
-router.get('/', riderController.getAllRiders);
+router.use(protect);
 
-// GET /api/v1/riders/:id
-router.get('/:id', riderController.getRiderById);
+router.get("/",    riderController.getAllRiders);
+router.post("/",   validateCreateRider, riderController.createRider);
+router.get("/:id", riderController.getRiderById);
+router.put("/:id", riderController.updateRider);
+router.delete("/:id", riderController.deleteRider);
+router.get("/:id/orders", riderController.getRiderOrders);
 
-// POST /api/v1/riders
-router.post('/', riderController.createRider);
-
-// PUT /api/v1/riders/:id
-router.put('/:id', riderController.updateRider);
-
-// DELETE /api/v1/riders/:id
-router.delete('/:id', riderController.deleteRider);
-
-// GET /api/v1/riders/:id/orders
-router.get('/:id/orders', riderController.getRiderOrders);
+// KYC approval / rejection — admin and super_admin only
+router.patch("/:id/approve", restrictTo("admin", "super_admin"), riderController.approveRider);
+router.patch("/:id/reject",  restrictTo("admin", "super_admin"), riderController.rejectRider);
 
 export default router;

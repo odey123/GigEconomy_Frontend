@@ -1,24 +1,22 @@
-import { Router } from 'express';
-import * as orderController from '../controllers/order.controller';
+import { Router } from "express";
+import { protect } from "../middleware/auth.middleware";
+import {
+  validateCreateOrder,
+  validateUpdateOrderStatus,
+  validateAssignRider,
+} from "../middleware/validate.middleware";
+import * as orderController from "../controllers/order.controller";
 
 const router = Router();
 
-// GET /api/v1/orders
-router.get('/', orderController.getAllOrders);
+router.use(protect);
 
-// GET /api/v1/orders/:id
-router.get('/:id', orderController.getOrderById);
-
-// POST /api/v1/orders
-router.post('/', orderController.createOrder);
-
-// PUT /api/v1/orders/:id
-router.put('/:id', orderController.updateOrder);
-
-// DELETE /api/v1/orders/:id
-router.delete('/:id', orderController.deleteOrder);
-
-// PATCH /api/v1/orders/:id/status
-router.patch('/:id/status', orderController.updateOrderStatus);
+router.get("/", orderController.getAllOrders);
+router.post("/", validateCreateOrder, orderController.createOrder);
+router.get("/:id", orderController.getOrderById);
+router.put("/:id", orderController.updateOrder);
+router.delete("/:id", orderController.deleteOrder);
+router.patch("/:id/status", validateUpdateOrderStatus, orderController.updateOrderStatus);
+router.patch("/:id/assign", validateAssignRider, orderController.assignRider);
 
 export default router;

@@ -53,7 +53,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     const token = generateToken({
-      id: newUser._id.toString(),
+      id: String(newUser._id),
       email: newUser.email,
       role: newUser.role as IUser["role"],
     });
@@ -110,7 +110,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const token = generateToken({
-      id: user._id.toString(),
+      id: (user._id as unknown as { toString(): string }).toString(),
       email: user.email,
       role: user.role as IUser["role"],
     });

@@ -41,6 +41,7 @@ export const HTTP = {
   CREATED: 201, // New resource was successfully created
   BAD_REQUEST: 400, // Client sent invalid/missing data
   UNAUTHORIZED: 401, // Not logged in (no token, bad token, expired token)
+  PAYMENT_REQUIRED: 402, // Insufficient funds
   FORBIDDEN: 403, // Logged in but not allowed to do this action
   NOT_FOUND: 404, // The requested resource doesn't exist
   CONFLICT: 409, // Resource already exists (e.g., email already taken)

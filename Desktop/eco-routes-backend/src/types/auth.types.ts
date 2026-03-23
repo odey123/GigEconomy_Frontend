@@ -42,6 +42,8 @@ declare global {
   namespace Express {
     interface Request {
       user?: JwtPayload;
+      client?: import("./client.types").ClientJwtPayload;
+      rider?: import("./rider.types").RiderJwtPayload;
     }
   }
 }
