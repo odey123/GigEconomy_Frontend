@@ -21,23 +21,27 @@ Authorization: Bearer <token>
 
 ## 📋 Table of Contents
 
-1. [Authentication](#authentication-endpoints)
-2. [Orders](#orders-endpoints)
-3. [Riders](#riders-endpoints)
-4. [Clients](#clients-endpoints)
-5. [Team Management](#team-management-endpoints)
-6. [Analytics](#analytics-endpoints)
-7. [Finance](#finance-endpoints)
-8. [Wallets & Payments](#wallets--payments-endpoints)
-9. [Data Models](#data-models)
+1. [Admin Authentication](#admin-authentication-endpoints)
+2. [Client Authentication](#client-authentication-endpoints)
+3. [Client Portal (Protected)](#client-portal-protected-endpoints)
+4. [Rider Authentication](#rider-authentication-endpoints) _(includes KYC self-registration)_
+5. [Orders](#orders-endpoints)
+6. [Riders (Admin)](#riders-endpoints)
+7. [Rider Self-Service](#rider-self-service-endpoints)
+8. [Clients](#clients-endpoints)
+9. [Team Management](#team-management-endpoints)
+10. [Analytics](#analytics-endpoints)
+11. [Finance](#finance-endpoints)
+12. [Wallets & Payments](#wallets--payments-endpoints)
+13. [Data Models](#data-models)
 
 ---
 
-## Authentication Endpoints
+## Admin Authentication Endpoints
 
 ### POST `/auth/register`
 
-Register a new user account.
+Register a new admin/staff user account.
 
 **Request Body:**
 ```json
@@ -46,7 +50,7 @@ Register a new user account.
   "email": "string",
   "phone": "string",
   "password": "string",
-  "role": "super_admin" | "admin" | "logistics_staff" | "rider"
+  "role": "super_admin" | "admin" | "logistics_staff"
 }
 ```
 
@@ -73,7 +77,7 @@ Register a new user account.
 
 ### POST `/auth/login`
 
-Authenticate user and get access token.
+Authenticate admin/staff user and get access token.
 
 **Request Body:**
 ```json
@@ -219,7 +223,7 @@ Application for enterprise post-paid invoicing. Collects deeper business data bu
 
 ### POST `/client-auth/login`
 
-Authenticate client and get access token. Fails with `403 Forbidden` if the account status is `pending`.
+Authenticate client and get access token. Fails with `403 Forbidden` if account status is `pending` or `suspended`.
 
 **Request Body:**
 ```json
@@ -237,12 +241,250 @@ Authenticate client and get access token. Fails with `403 Forbidden` if the acco
     "client": {
       "id": "string",
       "company": "string",
+      "contactName": "string",
       "email": "string",
       "accountType": "pay_as_you_go" | "corporate",
-      "status": "active"
+      "status": "active",
+      "walletBalance": number
     },
     "token": "string"
   }
+}
+```
+
+### POST `/client-auth/logout`
+
+Logout client.
+
+**Auth Required:** Yes
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+## Client Portal (Protected) Endpoints
+
+All endpoints below require a valid `client_token` (Bearer token from `/client-auth/login`).
+
+### GET `/client-auth/me`
+
+Get the authenticated client's profile and current wallet balance.
+
+**Auth Required:** Yes (`protectClient`)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "client": {
+      "id": "string",
+      "company": "string",
+      "contactName": "string",
+      "email": "string",
+      "phone": "string",
+      "address": "string",
+      "accountType": "pay_as_you_go" | "corporate",
+      "status": "active",
+      "totalOrders": number,
+      "activeOrders": number
+    },
+    "walletBalance": number
+  }
+}
+```
+
+### GET `/client-auth/orders`
+
+Get all orders placed by the authenticated client.
+
+**Auth Required:** Yes (`protectClient`)
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `status` | string | Filter by status (optional) |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Results per page (default: 50) |
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "orders": [
+      {
+        "id": "string",
+        "trackingId": "string",
+        "customerName": "string",
+        "status": "string",
+        "deliveryType": "string",
+        "totalFee": number,
+        "createdAt": "string",
+        "driver": "string (optional)"
+      }
+    ],
+    "pagination": {
+      "page": number,
+      "limit": number,
+      "total": number,
+      "totalPages": number
+    }
+  }
+}
+```
+
+### POST `/client-auth/orders`
+
+Place a new delivery order. For `pay_as_you_go` accounts, the delivery fee is deducted from the wallet immediately.
+
+**Auth Required:** Yes (`protectClient`)
+
+**Request Body:**
+```json
+{
+  "pickupLocation": "string",
+  "pickupContact": "string",
+  "pickupPhone": "string",
+  "customerName": "string",
+  "customerPhone": "string",
+  "customerAddress": "string",
+  "landmark": "string (optional)",
+  "description": "string",
+  "weight": number,
+  "value": number,
+  "deliveryType": "Standard" | "Express" | "Same Day",
+  "deliveryModel": "Standard" | "Premium",
+  "specialInstructions": "string (optional)",
+  "scheduledFor": "ISO 8601 datetime (optional)"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "status": "success",
+  "message": "Order created successfully",
+  "data": {
+    "order": {
+      "id": "string",
+      "trackingId": "string",
+      "otp": "string",
+      "status": "Pending",
+      "totalFee": number
+    }
+  }
+}
+```
+
+**Error – Insufficient balance:** `402 Payment Required`
+
+---
+
+## Rider Authentication Endpoints
+
+These endpoints are used by delivery riders accessing the Rider Portal.
+
+### POST `/rider-auth/register`
+
+Self-registration for marketplace/gig riders (premium tier). Collects full KYC data. Account is created with `status: pending` and `riderType: premium`. Admin must approve before the rider can log in.
+
+**Request Body:** `multipart/form-data`
+```
+name:            string (required)
+phone:           string (required)
+email:           string (required)
+password:        string (required, min 6 chars)
+vehicleType:     "Motorcycle" | "Car" | "Van" | "Bicycle" | "Truck" (required)
+vehicleNumber:   string (required) — plate number
+nin:             string (required) — 11-digit National Identification Number
+idType:          "NIN Slip" | "Driver's License" | "Voter's Card" | "International Passport" (required)
+idDocument:      File (required) — image of the ID document
+passportPhoto:   File (required) — clear face photo / selfie
+```
+
+**Response:** `201 Created`
+```json
+{
+  "status": "success",
+  "message": "Application submitted. Our team will review your details and notify you.",
+  "data": {
+    "rider": {
+      "id": "string",
+      "name": "string",
+      "email": "string",
+      "status": "pending",
+      "riderType": "premium"
+    }
+  }
+}
+```
+
+**Notes:**
+- Store uploaded images in object storage (S3/Cloudinary). Return permanent URLs saved on the rider record as `idDocumentUrl` and `passportPhotoUrl`.
+- Send an internal notification (email or in-app) to the admin team that a new KYC application is waiting for review.
+- NIN validation: must be exactly 11 digits, numeric only.
+
+---
+
+### POST `/rider-auth/login`
+
+Authenticate a rider and get access token.
+
+**Request Body:**
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "rider": {
+      "id": "string",
+      "name": "string",
+      "email": "string",
+      "phone": "string",
+      "status": "active" | "busy",
+      "riderType": "standard" | "premium",
+      "vehicleType": "string",
+      "rating": number,
+      "totalDeliveries": number,
+      "currentOrders": number
+    },
+    "token": "string"
+  }
+}
+```
+
+**Error Cases:**
+- `404` — No rider account found with this email
+- `403 pending` — Application is under review: `"Your application is under review. You will be notified once approved."`
+- `403 rejected` — Application was not approved: `"Your application was not approved. Reason: {rejectionReason}"` (include reason in message)
+- `403 inactive` — Account deactivated: `"Your account is inactive. Please contact the EcoRoutes team."`
+- `401` — Incorrect password
+
+### POST `/rider-auth/logout`
+
+Logout rider.
+
+**Auth Required:** Yes (Rider token)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Logged out successfully"
 }
 ```
 
@@ -252,14 +494,14 @@ Authenticate client and get access token. Fails with `403 Forbidden` if the acco
 
 ### GET `/orders`
 
-Get all orders with optional filtering.
+Get all orders with optional filtering. Used by the Admin dashboard.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin/Staff token)
 
 **Query Parameters:**
-- `status` (optional): Filter by order status
+- `status` (optional): Filter by order status (`Pending` | `Accepted` | `In Transit` | `Delivered` | `Cancelled` | `Failed`)
 - `clientId` (optional): Filter by business client
-- `riderId` (optional): Filter by rider
+- `riderId` (optional): Filter by assigned rider
 - `startDate` (optional): Filter from date (ISO 8601)
 - `endDate` (optional): Filter to date (ISO 8601)
 - `page` (optional): Page number (default: 1)
@@ -280,20 +522,28 @@ Get all orders with optional filtering.
         "customerLocation": "string",
         "businessClient": "string",
         "businessClientId": "string",
-        "status": "pending" | "assigned" | "picked_up" | "in_transit" | "delivered" | "cancelled",
-        "deliveryType": "standard" | "express" | "same_day",
-        "deliveryModel": "Standard" | "Premium",
+        "status": "Pending" | "Accepted" | "In Transit" | "Delivered" | "Cancelled" | "Failed",
+        "deliveryType": "Standard" | "Express" | "Same Day",
         "weight": "string",
         "value": "string",
         "description": "string (optional)",
+        "specialInstructions": "string (optional)",
         "pickupLocation": "string",
         "deliveryLocation": "string",
+        "landmark": "string (optional)",
         "driver": "string (optional)",
         "driverId": "string (optional)",
-        "date": "ISO 8601 datetime",
+        "assignedAt": "ISO 8601 datetime (optional)",
+        "otp": "string (optional)",
+        "deliveryProof": "string (optional)",
+        "date": "string",
         "createdAt": "ISO 8601 datetime",
         "updatedAt": "ISO 8601 datetime",
+        "scheduledFor": "ISO 8601 datetime (optional)",
+        "pickedUpAt": "ISO 8601 datetime (optional)",
+        "deliveredAt": "ISO 8601 datetime (optional)",
         "deliveryFee": number,
+        "adminFee": number,
         "totalFee": number
       }
     ],
@@ -313,54 +563,13 @@ Get a specific order by ID.
 
 **Auth Required:** Yes
 
-**Response:** `200 OK`
-```json
-{
-  "status": "success",
-  "data": {
-    "order": {
-      "id": "string",
-      "trackingId": "string",
-      "customer": "string",
-      "customerEmail": "string (optional)",
-      "customerPhone": "string",
-      "customerLocation": "string",
-      "businessClient": "string",
-      "businessClientId": "string",
-      "status": "string",
-      "deliveryType": "string",
-      "deliveryModel": "Standard" | "Premium",
-      "weight": "string",
-      "value": "string",
-      "description": "string",
-      "specialInstructions": "string",
-      "pickupLocation": "string",
-      "deliveryLocation": "string",
-      "landmark": "string",
-      "driver": "string",
-      "driverId": "string",
-      "assignedAt": "ISO 8601 datetime",
-      "otp": "string",
-      "date": "ISO 8601 datetime",
-      "createdAt": "ISO 8601 datetime",
-      "updatedAt": "ISO 8601 datetime",
-      "scheduledFor": "ISO 8601 datetime",
-      "pickedUpAt": "ISO 8601 datetime",
-      "deliveredAt": "ISO 8601 datetime",
-      "deliveryFee": number,
-      "adminFee": number,
-      "totalFee": number
-    }
-  }
-}
-```
+**Response:** `200 OK` — full order object (same shape as above)
 
 ### POST `/orders`
 
-Create a new order. The client will pass `deliveryModel` to choose between the **Standard Fleet** (normal rates) or the **Premium Market Model** (higher rates, priority dispatch). 
-The `deliveryFee` is automatically calculated based on the selected `deliveryModel`, weight, and distance, and then deducted from the client's wallet. The request will fail (`402 Payment Required`) if the wallet has insufficient funds.
+Create a new delivery order. The delivery fee is automatically calculated based on weight, delivery type, and distance, then deducted from the client's wallet. Returns `402 Payment Required` if the wallet has insufficient funds.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Client or Admin token)
 
 **Request Body:**
 ```json
@@ -375,8 +584,7 @@ The `deliveryFee` is automatically calculated based on the selected `deliveryMod
   "description": "string",
   "weight": number,
   "value": number,
-  "deliveryType": "standard" | "express" | "same_day",
-  "deliveryModel": "Standard" | "Premium",
+  "deliveryType": "Standard" | "Express" | "Same Day",
   "specialInstructions": "string (optional)",
   "scheduledFor": "ISO 8601 datetime (optional)",
   "businessClientId": "string"
@@ -392,7 +600,10 @@ The `deliveryFee` is automatically calculated based on the selected `deliveryMod
     "order": {
       "id": "string",
       "trackingId": "string",
-      "...": "...all order fields"
+      "otp": "string",
+      "status": "Pending",
+      "deliveryFee": number,
+      "totalFee": number
     }
   }
 }
@@ -400,21 +611,11 @@ The `deliveryFee` is automatically calculated based on the selected `deliveryMod
 
 ### PUT `/orders/:id`
 
-Update an existing order.
+Update an existing order (Admin only).
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
-**Request Body:** (Partial Order object)
-```json
-{
-  "customerName": "string (optional)",
-  "customerPhone": "string (optional)",
-  "deliveryLocation": "string (optional)",
-  "specialInstructions": "string (optional)",
-  "weight": "string (optional)",
-  "value": "string (optional)"
-}
-```
+**Request Body:** Partial order fields
 
 **Response:** `200 OK`
 ```json
@@ -429,19 +630,15 @@ Update an existing order.
 
 ### PATCH `/orders/:id/status`
 
-Update order status.
+Update order status. Used by Admin or system. For rider-driven status updates, use the dedicated rider endpoints below.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Request Body:**
 ```json
 {
-  "status": "pending" | "assigned" | "picked_up" | "in_transit" | "delivered" | "cancelled",
-  "notes": "string (optional)",
-  "location": {
-    "lat": number,
-    "lng": number
-  }
+  "status": "Pending" | "Accepted" | "In Transit" | "Delivered" | "Cancelled" | "Failed",
+  "notes": "string (optional)"
 }
 ```
 
@@ -449,7 +646,7 @@ Update order status.
 ```json
 {
   "status": "success",
-  "message": "Order status updated successfully",
+  "message": "Order status updated",
   "data": {
     "order": { "...": "updated order" }
   }
@@ -458,9 +655,9 @@ Update order status.
 
 ### PATCH `/orders/:id/assign`
 
-Assign a rider to an order.
+Assign a rider to an order (Admin action). Sets status to `Accepted` and generates/returns the delivery OTP.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Request Body:**
 ```json
@@ -479,7 +676,9 @@ Assign a rider to an order.
       "id": "string",
       "driver": "string",
       "driverId": "string",
-      "assignedAt": "ISO 8601 datetime"
+      "status": "Accepted",
+      "assignedAt": "ISO 8601 datetime",
+      "otp": "string"
     }
   }
 }
@@ -487,9 +686,9 @@ Assign a rider to an order.
 
 ### DELETE `/orders/:id`
 
-Delete an order.
+Delete an order (Admin only).
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Response:** `200 OK`
 ```json
@@ -503,15 +702,18 @@ Delete an order.
 
 ## Riders Endpoints
 
+> These are **admin-facing** endpoints for managing the rider fleet. For rider self-service actions (accepting jobs, updating status, viewing own earnings), see [Rider Self-Service Endpoints](#rider-self-service-endpoints).
+
 ### GET `/riders`
 
 Get all riders.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Query Parameters:**
-- `status` (optional): Filter by rider status (active | inactive | busy)
-- `available` (optional): Get only available riders (boolean)
+- `status` (optional): Filter by status (`active` | `inactive` | `busy` | `pending` | `rejected`)
+- `riderType` (optional): `standard` | `premium`
+- `available` (optional): `true` to return only riders with status `active`
 
 **Response:** `200 OK`
 ```json
@@ -521,18 +723,22 @@ Get all riders.
     "riders": [
       {
         "id": "string",
-        "firstName": "string",
-        "lastName": "string",
+        "name": "string",
         "phone": "string",
         "email": "string",
-        "status": "active" | "inactive" | "busy",
+        "status": "active" | "inactive" | "busy" | "pending" | "rejected",
+        "riderType": "standard" | "premium",
         "currentOrders": number,
-        "completedOrders": number,
         "totalDeliveries": number,
         "rating": number,
         "vehicleType": "string",
-        "vehicleNumber": "string",
-        "licenseNumber": "string",
+        "vehicleNumber": "string (optional)",
+        "vehicleColor": "string (optional)",
+        "nin": "string (optional, KYC — premium riders only)",
+        "idType": "string (optional, KYC — premium riders only)",
+        "idDocumentUrl": "string (optional) — URL to uploaded ID document image",
+        "passportPhotoUrl": "string (optional) — URL to uploaded passport/selfie image",
+        "rejectionReason": "string (optional) — set when status is rejected",
         "createdAt": "ISO 8601 datetime",
         "updatedAt": "ISO 8601 datetime"
       }
@@ -545,50 +751,25 @@ Get all riders.
 
 Get a specific rider by ID.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
-**Response:** `200 OK`
-```json
-{
-  "status": "success",
-  "data": {
-    "rider": {
-      "id": "string",
-      "firstName": "string",
-      "lastName": "string",
-      "phone": "string",
-      "email": "string",
-      "status": "string",
-      "currentOrders": number,
-      "completedOrders": number,
-      "totalDeliveries": number,
-      "rating": number,
-      "vehicleType": "string",
-      "vehicleNumber": "string",
-      "licenseNumber": "string",
-      "createdAt": "ISO 8601 datetime",
-      "updatedAt": "ISO 8601 datetime"
-    }
-  }
-}
-```
+**Response:** `200 OK` — full rider object
 
 ### POST `/riders`
 
-Create a new rider.
+Create a new rider account (Admin action). A temporary password is generated and sent to the rider's email.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Request Body:**
 ```json
 {
-  "firstName": "string",
-  "lastName": "string",
+  "name": "string",
   "phone": "string",
   "email": "string",
-  "vehicleType": "string",
-  "vehicleNumber": "string",
-  "licenseNumber": "string"
+  "vehicleType": "Motorcycle" | "Bicycle" | "Car" | "Van" | "Truck",
+  "vehicleNumber": "string (optional)",
+  "vehicleColor": "string (optional)"
 }
 ```
 
@@ -596,7 +777,7 @@ Create a new rider.
 ```json
 {
   "status": "success",
-  "message": "Rider created successfully",
+  "message": "Rider created successfully. Login credentials sent to rider's email.",
   "data": {
     "rider": { "...": "created rider" }
   }
@@ -605,17 +786,15 @@ Create a new rider.
 
 ### PUT `/riders/:id`
 
-Update a rider.
+Update a rider (Admin action).
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
-**Request Body:** (Partial Rider object)
+**Request Body:**
 ```json
 {
-  "firstName": "string (optional)",
-  "lastName": "string (optional)",
+  "name": "string (optional)",
   "phone": "string (optional)",
-  "email": "string (optional)",
   "status": "active" | "inactive" | "busy (optional)",
   "vehicleType": "string (optional)",
   "vehicleNumber": "string (optional)"
@@ -633,11 +812,63 @@ Update a rider.
 }
 ```
 
+### PATCH `/riders/:id/approve`
+
+Approve a pending marketplace rider application. Sets `status` to `active` so the rider can log in.
+
+**Auth Required:** Yes (Admin token)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Rider approved successfully",
+  "data": {
+    "rider": { "id": "string", "status": "active" }
+  }
+}
+```
+
+**Error Cases:**
+- `422` — Rider is not in `pending` status
+
+### PATCH `/riders/:id/reject`
+
+Reject a pending marketplace rider application. Sets `status` to `rejected` and stores the rejection reason. The rider will see this reason when they attempt to log in.
+
+**Auth Required:** Yes (Admin token)
+
+**Request Body:**
+```json
+{
+  "reason": "string (required)"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Rider application rejected",
+  "data": {
+    "rider": {
+      "id": "string",
+      "status": "rejected",
+      "rejectionReason": "string"
+    }
+  }
+}
+```
+
+**Error Cases:**
+- `422` — Rider is not in `pending` status
+- `400` — Rejection reason is required
+
 ### DELETE `/riders/:id`
 
 Delete a rider.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Response:** `200 OK`
 ```json
@@ -649,9 +880,9 @@ Delete a rider.
 
 ### GET `/riders/:id/orders`
 
-Get all orders assigned to a specific rider.
+Get all orders assigned to a specific rider (Admin view).
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Query Parameters:**
 - `status` (optional): Filter by order status
@@ -672,16 +903,289 @@ Get all orders assigned to a specific rider.
 
 ---
 
+## Rider Self-Service Endpoints
+
+> These endpoints are called from the **Rider Portal** using a **rider token**. They allow a rider to manage their own profile, browse and accept available jobs, and update delivery status.
+
+### GET `/rider/me`
+
+Get the currently logged-in rider's profile.
+
+**Auth Required:** Yes (Rider token)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "rider": {
+      "id": "string",
+      "name": "string",
+      "email": "string",
+      "phone": "string",
+      "status": "active" | "busy" | "inactive",
+      "vehicleType": "string",
+      "vehicleNumber": "string (optional)",
+      "rating": number,
+      "totalDeliveries": number,
+      "currentOrders": number
+    }
+  }
+}
+```
+
+### PATCH `/rider/me`
+
+Update the currently logged-in rider's profile (name, phone, vehicle).
+
+**Auth Required:** Yes (Rider token)
+
+**Request Body:**
+```json
+{
+  "name": "string (optional)",
+  "phone": "string (optional)",
+  "vehicleType": "string (optional)"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Profile updated successfully",
+  "data": {
+    "rider": { "...": "updated rider" }
+  }
+}
+```
+
+### PATCH `/rider/me/status`
+
+Update the rider's availability status (Available / Busy / Offline).
+
+**Auth Required:** Yes (Rider token)
+
+**Request Body:**
+```json
+{
+  "status": "active" | "busy" | "inactive"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "status": "active" | "busy" | "inactive"
+  }
+}
+```
+
+### GET `/rider/available-jobs`
+
+Get all orders available for a rider to accept — orders with status `Pending` and no assigned rider.
+
+**Auth Required:** Yes (Rider token)
+
+**Query Parameters:**
+- `deliveryType` (optional): Filter by type
+- `page` (optional): Page number
+- `limit` (optional): Items per page (default: 20)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "jobs": [
+      {
+        "id": "string",
+        "trackingId": "string",
+        "pickupLocation": "string",
+        "deliveryLocation": "string",
+        "description": "string",
+        "weight": "string",
+        "deliveryType": "string",
+        "totalFee": number,
+        "estimatedRiderEarnings": number,
+        "createdAt": "ISO 8601 datetime"
+      }
+    ],
+    "pagination": { "...": "pagination object" }
+  }
+}
+```
+
+> **Note:** `estimatedRiderEarnings` = `totalFee × 0.75` (Platform retains 25%)
+
+### POST `/rider/jobs/:orderId/accept`
+
+Rider accepts an available job. Sets order status to `Accepted`, assigns rider, and generates delivery OTP.
+
+**Auth Required:** Yes (Rider token)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Job accepted",
+  "data": {
+    "order": {
+      "id": "string",
+      "trackingId": "string",
+      "status": "Accepted",
+      "otp": "string",
+      "pickupLocation": "string",
+      "deliveryLocation": "string",
+      "customer": "string",
+      "customerPhone": "string",
+      "assignedAt": "ISO 8601 datetime"
+    }
+  }
+}
+```
+
+**Error Cases:**
+- `409` — Order already assigned to another rider
+- `409` — Order is no longer available (status changed)
+
+### PATCH `/rider/jobs/:orderId/pickup`
+
+Rider marks a job as picked up. Sets order status to `In Transit` and records `pickedUpAt` timestamp.
+
+**Auth Required:** Yes (Rider token)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Order marked as picked up",
+  "data": {
+    "order": {
+      "id": "string",
+      "status": "In Transit",
+      "pickedUpAt": "ISO 8601 datetime"
+    }
+  }
+}
+```
+
+**Error Cases:**
+- `403` — This order is not assigned to the authenticated rider
+- `422` — Order must be in `Accepted` status to mark as picked up
+
+### PATCH `/rider/jobs/:orderId/deliver`
+
+Rider marks a job as delivered. Sets order status to `Delivered`, records `deliveredAt`, and saves delivery proof. Triggers the payout transaction creation in the finance system.
+
+**Auth Required:** Yes (Rider token)
+
+**Request Body:** `multipart/form-data`
+```
+note: "string (optional)"   — delivery note, e.g. "Left with security guard"
+proof: File (optional)       — photo or signature image (future: currently text only)
+```
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Delivery confirmed",
+  "data": {
+    "order": {
+      "id": "string",
+      "status": "Delivered",
+      "deliveredAt": "ISO 8601 datetime",
+      "deliveryProof": "string"
+    },
+    "earnings": {
+      "orderId": "string",
+      "riderEarnings": number,
+      "platformCommission": number,
+      "totalFee": number
+    }
+  }
+}
+```
+
+**Error Cases:**
+- `403` — This order is not assigned to the authenticated rider
+- `422` — Order must be in `In Transit` status to mark as delivered
+
+### GET `/rider/me/orders`
+
+Get all orders assigned to the currently logged-in rider, with optional status filtering.
+
+**Auth Required:** Yes (Rider token)
+
+**Query Parameters:**
+- `status` (optional): `Accepted` | `In Transit` | `Delivered` | `Cancelled` | `Failed`
+- `page` (optional): Page number
+- `limit` (optional): Items per page
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "orders": [
+      { "...": "order objects" }
+    ],
+    "pagination": { "...": "pagination object" }
+  }
+}
+```
+
+### GET `/rider/me/earnings`
+
+Get the currently logged-in rider's earnings summary broken down by time period, plus a detailed payout history.
+
+**Auth Required:** Yes (Rider token)
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "data": {
+    "summary": {
+      "today": number,
+      "thisWeek": number,
+      "thisMonth": number,
+      "allTime": number
+    },
+    "commissionRate": 0.75,
+    "payouts": [
+      {
+        "orderId": "string",
+        "trackingId": "string",
+        "deliveredAt": "ISO 8601 datetime",
+        "pickupLocation": "string",
+        "deliveryLocation": "string",
+        "deliveryType": "string",
+        "totalFee": number,
+        "riderEarnings": number,
+        "status": "Pending" | "Processed"
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## Clients Endpoints
 
 ### GET `/clients`
 
 Get all business clients.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Query Parameters:**
-- `status` (optional): Filter by client status
+- `status` (optional): Filter by status (`active` | `inactive` | `pending`)
+- `accountType` (optional): Filter by type (`pay_as_you_go` | `corporate`)
 - `page` (optional): Page number
 - `limit` (optional): Items per page
 
@@ -703,7 +1207,7 @@ Get all business clients.
         "estimatedMonthlyVolume": "string (optional)",
         "totalOrders": number,
         "activeOrders": number,
-        "status": "active" | "inactive" | "pending",
+        "status": "active" | "inactive" | "pending" | "suspended",
         "createdAt": "ISO 8601 datetime",
         "updatedAt": "ISO 8601 datetime"
       }
@@ -716,38 +1220,15 @@ Get all business clients.
 
 Get a specific client by ID.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
-**Response:** `200 OK`
-```json
-{
-  "status": "success",
-  "data": {
-    "client": {
-      "id": "string",
-      "contactName": "string",
-      "email": "string",
-      "phone": "string",
-      "company": "string",
-      "address": "string",
-      "accountType": "pay_as_you_go" | "corporate",
-      "registrationNumber": "string (optional)",
-      "estimatedMonthlyVolume": "string (optional)",
-      "totalOrders": number,
-      "activeOrders": number,
-      "status": "string",
-      "createdAt": "ISO 8601 datetime",
-      "updatedAt": "ISO 8601 datetime"
-    }
-  }
-}
-```
+**Response:** `200 OK` — full client object
 
 ### POST `/clients`
 
-Create a new business client.
+Create a new business client (Admin action).
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Request Body:**
 ```json
@@ -778,20 +1259,9 @@ Create a new business client.
 
 Update a client.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
-**Request Body:** (Partial Client object)
-```json
-{
-  "contactName": "string (optional)",
-  "email": "string (optional)",
-  "phone": "string (optional)",
-  "company": "string (optional)",
-  "address": "string (optional)",
-  "status": "active" | "inactive" | "pending (optional)",
-  "accountType": "pay_as_you_go" | "corporate (optional)"
-}
-```
+**Request Body:** Partial client fields
 
 **Response:** `200 OK`
 ```json
@@ -804,11 +1274,35 @@ Update a client.
 }
 ```
 
+### PATCH `/clients/:id/status`
+
+Approve, activate, suspend, or deactivate a client account.
+
+**Auth Required:** Yes (Admin token)
+
+**Request Body:**
+```json
+{
+  "status": "active" | "inactive" | "suspended"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "status": "success",
+  "message": "Client status updated",
+  "data": {
+    "client": { "id": "string", "status": "string" }
+  }
+}
+```
+
 ### DELETE `/clients/:id`
 
 Delete a client.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Response:** `200 OK`
 ```json
@@ -822,7 +1316,7 @@ Delete a client.
 
 Get all orders for a specific client.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin or Client token)
 
 **Response:** `200 OK`
 ```json
@@ -846,8 +1340,7 @@ Get all orders for a specific client.
 
 Get all team members/staff users.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Response:** `200 OK`
 ```json
@@ -860,7 +1353,7 @@ Get all team members/staff users.
         "name": "string",
         "email": "string",
         "phone": "string",
-        "role": "super_admin" | "admin" | "logistics_staff" | "rider",
+        "role": "super_admin" | "admin" | "logistics_staff",
         "avatar": "string",
         "isActive": boolean,
         "createdAt": "ISO 8601 datetime",
@@ -875,35 +1368,13 @@ Get all team members/staff users.
 
 Get a specific team member by ID.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
-
-**Response:** `200 OK`
-```json
-{
-  "status": "success",
-  "data": {
-    "user": {
-      "id": "string",
-      "name": "string",
-      "email": "string",
-      "phone": "string",
-      "role": "string",
-      "avatar": "string",
-      "isActive": boolean,
-      "createdAt": "ISO 8601 datetime",
-      "updatedAt": "ISO 8601 datetime"
-    }
-  }
-}
-```
+**Auth Required:** Yes (Admin or Super Admin)
 
 ### POST `/team/users`
 
 Create a new team member.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Request Body:**
 ```json
@@ -912,67 +1383,30 @@ Create a new team member.
   "email": "string",
   "phone": "string",
   "password": "string",
-  "role": "admin" | "logistics_staff" | "rider"
+  "role": "admin" | "logistics_staff"
 }
 ```
 
 **Response:** `201 Created`
-```json
-{
-  "status": "success",
-  "message": "Team member created successfully",
-  "data": {
-    "user": { "...": "created user" }
-  }
-}
-```
 
 ### PUT `/team/users/:id`
 
 Update a team member.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
-
-**Request Body:** (Partial User object)
-```json
-{
-  "name": "string (optional)",
-  "email": "string (optional)",
-  "phone": "string (optional)",
-  "role": "string (optional)",
-  "isActive": boolean (optional)
-}
-```
-
-**Response:** `200 OK`
-```json
-{
-  "status": "success",
-  "message": "Team member updated successfully",
-  "data": {
-    "user": { "...": "updated user" }
-  }
-}
-```
+**Auth Required:** Yes (Admin or Super Admin)
 
 ### PATCH `/team/users/:id/toggle-status`
 
 Activate or deactivate a team member.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Response:** `200 OK`
 ```json
 {
   "status": "success",
-  "message": "User status updated successfully",
   "data": {
-    "user": {
-      "id": "string",
-      "isActive": boolean
-    }
+    "user": { "id": "string", "isActive": boolean }
   }
 }
 ```
@@ -981,16 +1415,7 @@ Activate or deactivate a team member.
 
 Delete a team member.
 
-**Auth Required:** Yes  
-**Required Role:** Super Admin only
-
-**Response:** `200 OK`
-```json
-{
-  "status": "success",
-  "message": "Team member deleted successfully"
-}
-```
+**Auth Required:** Yes (Super Admin only)
 
 ---
 
@@ -1000,7 +1425,7 @@ Delete a team member.
 
 Get overall dashboard analytics.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Query Parameters:**
 - `period` (optional): `daily` | `weekly` | `monthly` (default: daily)
@@ -1020,11 +1445,8 @@ Get overall dashboard analytics.
       "onTimeRate": number
     },
     "charts": {
-      "volumeByTime": [
+      "volumeByHour": [
         { "hour": "string", "count": number }
-      ],
-      "volumeByDay": [
-        { "day": "string", "count": number }
       ],
       "deliveryPerformance": [
         { "date": "string", "onTime": number, "late": number }
@@ -1032,7 +1454,7 @@ Get overall dashboard analytics.
     },
     "rankings": {
       "topRiders": [
-        { "id": "string", "name": "string", "orders": number, "rating": number }
+        { "id": "string", "name": "string", "deliveries": number, "rating": number }
       ],
       "topClients": [
         { "id": "string", "name": "string", "orders": number }
@@ -1046,11 +1468,10 @@ Get overall dashboard analytics.
 
 Get order-specific analytics.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Query Parameters:**
-- `startDate` (optional): Start date (ISO 8601)
-- `endDate` (optional): End date (ISO 8601)
+- `startDate` / `endDate` (optional): ISO 8601 date range
 - `groupBy` (optional): `hour` | `day` | `week` | `month`
 
 **Response:** `200 OK`
@@ -1059,17 +1480,17 @@ Get order-specific analytics.
   "status": "success",
   "data": {
     "statusDistribution": {
-      "pending": number,
-      "assigned": number,
-      "picked_up": number,
-      "in_transit": number,
-      "delivered": number,
-      "cancelled": number
+      "Pending": number,
+      "Accepted": number,
+      "In Transit": number,
+      "Delivered": number,
+      "Cancelled": number,
+      "Failed": number
     },
     "deliveryTypeDistribution": {
-      "standard": number,
-      "express": number,
-      "same_day": number
+      "Standard": number,
+      "Express": number,
+      "Same Day": number
     },
     "volumeTrend": [
       { "period": "string", "count": number }
@@ -1082,7 +1503,7 @@ Get order-specific analytics.
 
 Get rider performance analytics.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Admin token)
 
 **Response:** `200 OK`
 ```json
@@ -1097,7 +1518,7 @@ Get rider performance analytics.
         "riderId": "string",
         "riderName": "string",
         "totalDeliveries": number,
-        "completedOrders": number,
+        "successRate": number,
         "averageDeliveryTime": number,
         "rating": number
       }
@@ -1114,16 +1535,12 @@ Get rider performance analytics.
 
 Get all financial transactions.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Query Parameters:**
-- `status` (optional): `pending` | `processed` | `disputed`
-- `deliveryModel` (optional): `Standard` | `Premium`
-- `startDate` (optional): ISO 8601 datetime
-- `endDate` (optional): ISO 8601 datetime
-- `page` (optional): Page number
-- `limit` (optional): Items per page
+- `status` (optional): `Pending` | `Processed` | `Disputed`
+- `startDate` / `endDate` (optional): ISO 8601 date range
+- `page` / `limit` (optional): Pagination
 
 **Response:** `200 OK`
 ```json
@@ -1138,7 +1555,6 @@ Get all financial transactions.
         "clientName": "string",
         "riderId": "string",
         "riderName": "string",
-        "deliveryModel": "Standard" | "Premium",
         "totalFee": number,
         "platformCommission": number,
         "riderPayout": number,
@@ -1148,11 +1564,7 @@ Get all financial transactions.
         "createdAt": "ISO 8601 datetime"
       }
     ],
-    "pagination": {
-      "page": number,
-      "limit": number,
-      "total": number
-    }
+    "pagination": { "...": "pagination object" }
   }
 }
 ```
@@ -1161,8 +1573,7 @@ Get all financial transactions.
 
 Get revenue statistics.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Query Parameters:**
 - `period` (optional): `daily` | `weekly` | `monthly` | `yearly`
@@ -1174,19 +1585,12 @@ Get revenue statistics.
   "data": {
     "stats": {
       "totalRevenue": number,
-      "standardRevenue": number,
-      "premiumRevenue": number,
       "platformEarnings": number,
       "riderPayouts": number,
-      "operationalExpenses": number,
       "netProfit": number
     },
     "trend": [
-      {
-        "period": "string",
-        "revenue": number,
-        "profit": number
-      }
+      { "period": "string", "revenue": number, "profit": number }
     ]
   }
 }
@@ -1194,10 +1598,9 @@ Get revenue statistics.
 
 ### PATCH `/finance/transactions/:id/process`
 
-Process a transaction payout.
+Process a rider payout transaction.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Response:** `200 OK`
 ```json
@@ -1218,8 +1621,7 @@ Process a transaction payout.
 
 Mark a transaction as disputed.
 
-**Auth Required:** Yes  
-**Required Role:** Admin or Super Admin
+**Auth Required:** Yes (Admin or Super Admin)
 
 **Request Body:**
 ```json
@@ -1232,12 +1634,8 @@ Mark a transaction as disputed.
 ```json
 {
   "status": "success",
-  "message": "Transaction marked as disputed",
   "data": {
-    "transaction": {
-      "id": "string",
-      "status": "Disputed"
-    }
+    "transaction": { "id": "string", "status": "Disputed" }
   }
 }
 ```
@@ -1248,9 +1646,9 @@ Mark a transaction as disputed.
 
 ### GET `/wallets/me`
 
-Get current client's wallet balance and status.
+Get the authenticated client's wallet balance.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Client token)
 
 **Response:** `200 OK`
 ```json
@@ -1263,7 +1661,6 @@ Get current client's wallet balance and status.
       "balance": number,
       "currency": "NGN",
       "isActive": true,
-      "createdAt": "ISO 8601 datetime",
       "updatedAt": "ISO 8601 datetime"
     }
   }
@@ -1272,9 +1669,9 @@ Get current client's wallet balance and status.
 
 ### POST `/wallets/fund/initialize`
 
-Initialize a wallet top-up transaction via Payment Gateway (e.g., Paystack/Flutterwave).
+Initialize a wallet top-up via Paystack/Flutterwave. Returns a payment authorization URL to redirect the client to.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Client token)
 
 **Request Body:**
 ```json
@@ -1287,7 +1684,6 @@ Initialize a wallet top-up transaction via Payment Gateway (e.g., Paystack/Flutt
 ```json
 {
   "status": "success",
-  "message": "Payment initialized successfully",
   "data": {
     "reference": "string",
     "authorizationUrl": "string"
@@ -1297,22 +1693,21 @@ Initialize a wallet top-up transaction via Payment Gateway (e.g., Paystack/Flutt
 
 ### POST `/wallets/fund/webhook`
 
-Webhook endpoint for the payment gateway to confirm successful payment.
+Webhook endpoint called by the payment gateway to confirm a successful payment and credit the client's wallet.
 
-**Auth Required:** No (Secured via signature verification)
+**Auth Required:** No (Secured via HMAC signature verification)
 
 **Response:** `200 OK`
 
 ### GET `/wallets/transactions`
 
-Get wallet transaction ledger (credits and debits).
+Get the client's wallet transaction ledger.
 
-**Auth Required:** Yes
+**Auth Required:** Yes (Client token)
 
 **Query Parameters:**
 - `type` (optional): `credit` | `debit`
-- `page` (optional): Page number
-- `limit` (optional): Items per page
+- `page` / `limit` (optional): Pagination
 
 **Response:** `200 OK`
 ```json
@@ -1322,7 +1717,6 @@ Get wallet transaction ledger (credits and debits).
     "transactions": [
       {
         "id": "string",
-        "walletId": "string",
         "type": "credit" | "debit",
         "amount": number,
         "balanceBefore": number,
@@ -1332,11 +1726,7 @@ Get wallet transaction ledger (credits and debits).
         "createdAt": "ISO 8601 datetime"
       }
     ],
-    "pagination": {
-      "page": number,
-      "limit": number,
-      "total": number
-    }
+    "pagination": { "...": "pagination object" }
   }
 }
 ```
@@ -1345,28 +1735,70 @@ Get wallet transaction ledger (credits and debits).
 
 ## Data Models
 
-### User Roles
+### User Roles (Admin/Staff)
 
 ```typescript
-type UserRole = "super_admin" | "admin" | "logistics_staff" | "rider"
+type UserRole = "super_admin" | "admin" | "logistics_staff"
 ```
 
 ### Order Status
 
 ```typescript
-type OrderStatus = "pending" | "assigned" | "picked_up" | "in_transit" | "delivered" | "cancelled"
+type OrderStatus = "Pending" | "Accepted" | "In Transit" | "Delivered" | "Cancelled" | "Failed"
 ```
+
+> **Flow:** `Pending` → `Accepted` (rider assigned) → `In Transit` (rider picks up) → `Delivered` (rider confirms)
+> Cancelled or Failed can occur at any stage.
 
 ### Delivery Type
 
 ```typescript
-type DeliveryType = "standard" | "express" | "same_day"
+type DeliveryType = "Standard" | "Express" | "Same Day"
+```
+
+### Rider Type
+
+```typescript
+type RiderType = "standard" | "premium"
+// standard = admin-added fleet rider (no KYC flow)
+// premium  = marketplace/gig rider, self-registered with KYC, earns 75% commission
 ```
 
 ### Rider Status
 
 ```typescript
-type RiderStatus = "active" | "inactive" | "busy"
+type RiderStatus = "active" | "busy" | "inactive" | "pending" | "rejected"
+// active   = available for new jobs (can log in)
+// busy     = currently on a delivery (can log in)
+// inactive = offline / deactivated (blocked from login)
+// pending  = KYC application submitted, awaiting admin review (blocked from login)
+// rejected = KYC application denied by admin (blocked from login, sees rejection reason)
+```
+
+### KYC Fields (Premium Riders)
+
+Fields only present on `riderType: "premium"` riders:
+
+| Field | Type | Notes |
+|---|---|---|
+| `nin` | string | 11-digit National Identification Number |
+| `idType` | string | `"NIN Slip"` \| `"Driver's License"` \| `"Voter's Card"` \| `"International Passport"` |
+| `idDocumentUrl` | string | Permanent URL to uploaded ID document image |
+| `passportPhotoUrl` | string | Permanent URL to uploaded passport/selfie image |
+| `rejectionReason` | string | Set when admin rejects; returned in login error message |
+
+### Client Account Type
+
+```typescript
+type AccountType = "pay_as_you_go" | "corporate"
+```
+
+### Client Status
+
+```typescript
+type ClientStatus = "active" | "inactive" | "pending" | "suspended"
+// pending = awaiting admin approval (new self-serve signups)
+// suspended = blocked by admin
 ```
 
 ### Transaction Status
@@ -1375,20 +1807,13 @@ type RiderStatus = "active" | "inactive" | "busy"
 type TransactionStatus = "Pending" | "Processed" | "Disputed"
 ```
 
-### Delivery Model
+### Commission Structure
 
-```typescript
-type DeliveryModel = "Standard" | "Premium"
-```
+| Model | Platform Takes | Rider Gets |
+|---|---|---|
+| All deliveries (current) | 25% | 75% |
 
-**Standard Model:** Company-owned vehicles. Regular delivery rates.
-**Premium Model:** Independent top-rated riders (Market Model). More expensive delivery rates, priority dispatch. Platform takes 25% commission, rider gets 75%.
-
-### Wallet Transaction Type
-
-```typescript
-type WalletTxType = "credit" | "debit"
-```
+> Future expansion may support per-rider commission tiers.
 
 ---
 
@@ -1399,11 +1824,11 @@ All error responses follow this format:
 ```json
 {
   "status": "error",
-  "message": "Error description",
+  "message": "Human-readable error description",
   "errors": [
     {
       "field": "fieldName",
-      "message": "Specific error message"
+      "message": "Specific field error"
     }
   ]
 }
@@ -1411,15 +1836,18 @@ All error responses follow this format:
 
 ### HTTP Status Codes
 
-- `200` - OK
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `409` - Conflict
-- `422` - Validation Error
-- `500` - Internal Server Error
+| Code | Meaning |
+|---|---|
+| `200` | OK |
+| `201` | Created |
+| `400` | Bad Request (malformed input) |
+| `401` | Unauthorized (missing or invalid token) |
+| `402` | Payment Required (insufficient wallet balance) |
+| `403` | Forbidden (wrong role, inactive account) |
+| `404` | Not Found |
+| `409` | Conflict (e.g., order already accepted) |
+| `422` | Validation Error (valid format, invalid business logic) |
+| `500` | Internal Server Error |
 
 ---
 
@@ -1427,20 +1855,20 @@ All error responses follow this format:
 
 - **Limit:** 100 requests per minute per IP
 - **Headers:**
-  - `X-RateLimit-Limit`: Request limit
-  - `X-RateLimit-Remaining`: Remaining requests
-  - `X-RateLimit-Reset`: Reset timestamp
+  - `X-RateLimit-Limit`
+  - `X-RateLimit-Remaining`
+  - `X-RateLimit-Reset`
 
 ---
 
 ## Pagination
 
-All list endpoints support pagination with the following query parameters:
+All list endpoints support pagination:
 
 - `page` (default: 1)
 - `limit` (default: 50, max: 100)
 
-Response includes pagination metadata:
+Standard pagination response:
 
 ```json
 {
@@ -1460,6 +1888,7 @@ Response includes pagination metadata:
 ## Notes
 
 - All timestamps are in ISO 8601 format: `YYYY-MM-DDTHH:mm:ss.sssZ`
-- All monetary values are in the smallest currency unit (kobo/cents)
-- File uploads (delivery proof, documents) should use `multipart/form-data`
+- All monetary values are in **Naira (NGN)**, not kobo — return full unit values (e.g., `12500` = ₦12,500)
+- File uploads (delivery proof photos) use `multipart/form-data`
 - All text fields support UTF-8 encoding
+- The `otp` field on orders is the delivery confirmation code shown to the rider and given verbally by the recipient
