@@ -70,7 +70,7 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
     ]);
 
     sendSuccess(res, {
-      orders: orders.map((o) => buildOrderResponse(o.toJSON())),
+      orders: orders.map((o) => buildOrderResponse(o.toJSON() as unknown as Record<string, unknown>)),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -103,7 +103,7 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    sendSuccess(res, { order: buildOrderResponse(order.toJSON()) });
+    sendSuccess(res, { order: buildOrderResponse(order.toJSON() as unknown as Record<string, unknown>) });
   } catch (error) {
     console.error("Get order error:", error);
     sendError(res, "Error fetching order", HTTP.SERVER_ERROR);

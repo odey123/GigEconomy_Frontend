@@ -39,7 +39,7 @@ export const getTransactions = async (req: Request, res: Response): Promise<void
     ]);
 
     const transactions = txns.map((t) => {
-      const obj = t.toJSON() as Record<string, unknown>;
+      const obj = t.toJSON() as unknown as Record<string, unknown>;
       const client = obj["clientId"] as Record<string, unknown> | null;
       const rider = obj["riderId"] as Record<string, unknown> | null;
       return {

@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 import Client from "../models/client.model";
 import Order from "../models/order.model";
 import Wallet from "../models/wallet.model";
@@ -164,7 +163,7 @@ export const getClientOrders = async (req: Request, res: Response): Promise<void
 
     sendSuccess(res, {
       orders: orders.map((o) => {
-        const obj = o.toJSON() as Record<string, unknown>;
+        const obj = o.toJSON() as unknown as Record<string, unknown>;
         const rider = obj["riderId"] as Record<string, unknown> | null | undefined;
         
         // Status normalization for Client Portal display
