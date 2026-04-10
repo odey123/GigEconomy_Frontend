@@ -5,6 +5,8 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import Redis from "ioredis";
 
 import { errorHandler } from "./middleware/errorHandler";
 import apiRoutes from "./routes";
@@ -32,6 +34,31 @@ const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
 // ---------------------------------------------------------------------------
+// Redis client (optional — falls back to in-memory if REDIS_URL is not set)
+// ---------------------------------------------------------------------------
+let redisClient: Redis | null = null;
+if (process.env.REDIS_URL) {
+  redisClient = new Redis(process.env.REDIS_URL, { lazyConnect: true });
+  redisClient.on("error", (err) => {
+    console.error("Redis error:", err.message);
+  });
+  redisClient.connect().catch(() => {
+    console.warn("⚠️  Could not connect to Redis — rate limiter falling back to memory store");
+    redisClient = null;
+  });
+} else {
+  console.warn("⚠️  REDIS_URL not set — rate limiter using in-memory store (not safe for multi-process)");
+}
+
+const makeStore = () =>
+  redisClient
+    ? new RedisStore({
+        sendCommand: (command: string, ...args: (string | number | Buffer)[]) =>
+          redisClient!.call(command, ...(args as string[])) as Promise<number>,
+      })
+    : undefined; // undefined → express-rate-limit uses its default MemoryStore
+
+// ---------------------------------------------------------------------------
 // Security middleware
 // ---------------------------------------------------------------------------
 app.use(helmet());
@@ -55,8 +82,9 @@ app.use(
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore(),
   message: {
     status: "error",
     message: "Too many requests. Please wait a moment and try again.",
@@ -69,6 +97,7 @@ const authLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore(),
   message: {
     status: "error",
     message: "Too many authentication attempts. Please wait 15 minutes and try again.",
