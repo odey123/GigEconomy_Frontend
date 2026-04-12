@@ -77,6 +77,7 @@ app.use(
 // ---------------------------------------------------------------------------
 // Rate limiting
 // ---------------------------------------------------------------------------
+app.set("trust proxy", 1);
 
 // General API rate limit — 100 req/min per IP (matches API_DOCUMENTATION.md spec)
 const apiLimiter = rateLimit({
