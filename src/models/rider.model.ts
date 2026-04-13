@@ -102,9 +102,11 @@ RiderSchema.methods.comparePassword = async function (
 };
 
 RiderSchema.set("toJSON", {
+  virtuals: true,
   transform: (_doc, ret) => {
     const obj = ret as unknown as Record<string, unknown>;
     obj["id"] = (obj["_id"] as { toString(): string }).toString();
+    obj["name"] = `${obj["firstName"]} ${obj["lastName"]}`.trim();
     delete obj["_id"];
     delete obj["__v"];
     delete obj["password"];
