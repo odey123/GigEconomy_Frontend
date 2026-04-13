@@ -65,9 +65,9 @@ app.use(helmet());
 app.use(
   cors({
     origin: [
-      "https://eccoroutes.com",
-      "https://www.eccoroutes.com",
-      "https://staging.eccoroutes.com",
+      "https://eccoroute.com",
+      "https://www.eccoroute.com",
+      "https://staging.eccoroute.com",
       "http://localhost:5173",
     ],
     credentials: true,
