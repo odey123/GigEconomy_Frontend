@@ -38,9 +38,9 @@ app.use(helmet());
 app.use(
   cors({
     origin: [
-      "https://eccoroutes.com",
-      "https://www.eccoroutes.com",
-      "https://staging.eccoroutes.com",
+      "https://eccoroute.com",
+      "https://www.eccoroute.com",
+      "https://staging.eccoroute.com",
       "http://localhost:5173",
     ],
     credentials: true,
@@ -80,16 +80,10 @@ app.use("/api/v1", apiLimiter as RequestHandler);
 app.use("/api/v1/auth", authLimiter as RequestHandler);
 app.use("/api/v1/client-auth", authLimiter as RequestHandler);
 
-// ---------------------------------------------------------------------------
-// Body parsers — explicit size limits to prevent oversized payload DoS
-// ---------------------------------------------------------------------------
 app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-// ---------------------------------------------------------------------------
-// Health check
-// ---------------------------------------------------------------------------
 app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "success",
@@ -98,14 +92,8 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// API Routes
-// ---------------------------------------------------------------------------
 app.use("/api/v1", apiRoutes);
 
-// ---------------------------------------------------------------------------
-// 404 handler
-// ---------------------------------------------------------------------------
 app.use((req, res) => {
   res.status(404).json({
     status: "error",
@@ -113,14 +101,8 @@ app.use((req, res) => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Global error handler (must be last)
-// ---------------------------------------------------------------------------
 app.use(errorHandler);
 
-// ---------------------------------------------------------------------------
-// Graceful shutdown
-// ---------------------------------------------------------------------------
 const shutdown = async (signal: string): Promise<void> => {
   console.log(`\n${signal} received — shutting down gracefully…`);
   await mongoose.disconnect();
@@ -131,16 +113,13 @@ const shutdown = async (signal: string): Promise<void> => {
 process.on("SIGTERM", () => { void shutdown("SIGTERM"); });
 process.on("SIGINT", () => { void shutdown("SIGINT"); });
 
-// ---------------------------------------------------------------------------
-// Start server
-// ---------------------------------------------------------------------------
 (async () => {
   await connectDB();
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
-    console.log(`📍 Health check: http://localhost:${PORT}/health`);
-    console.log(`📍 API base:     http://localhost:${PORT}/api/v1`);
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`API base:     http://localhost:${PORT}/api/v1`);
   });
 })();
 
