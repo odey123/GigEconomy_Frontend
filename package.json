@@ -1,5 +1,6 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "gig-economy-frontend",
+  "description": "Micro-employment infrastructure for Nigeria — frontend",
   "private": true,
   "version": "0.0.1",
   "type": "module",
