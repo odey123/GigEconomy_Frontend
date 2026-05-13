@@ -1,0 +1,247 @@
+import { ArrowLeft, CheckCircle, MapPin, Star, Zap, ShoppingBag, Wrench, Clock, Shield, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+
+const gig = {
+  id: 1,
+  title: 'Sell Parfait at Unilag Campus',
+  type: 'sales',
+  matchScore: 92,
+  description:
+    'We make fresh, beautiful parfait cups and need campus reps to sell them to students at Unilag and nearby institutions. You take stock on consignment — no upfront payment needed — and earn 20% on every cup sold. Perfect if you live in a hostel or have a strong campus network.',
+  commission: '20%',
+  fixedPrice: null,
+  pricePerUnit: '₦2,000',
+  estimatedEarnings: '₦8,000 – ₦15,000',
+  earningsNote: 'Based on selling 20–40 cups per week',
+  location: 'Yaba / Mainland axis',
+  locationNote: 'Exact pickup address shared after approval',
+  businessName: 'Cravings by Sade',
+  verified: true,
+  rating: 4.8,
+  totalGigs: 14,
+  totalReviews: 38,
+  memberSince: 'Jan 2024',
+  skillLevel: 'No experience required',
+  requirements: [
+    'Must be based in Yaba or nearby (within 5 km)',
+    'Must have an active student or campus network',
+    'Phone with good internet for order tracking',
+    'Ability to pick up stock 3× per week',
+  ],
+  evidenceRequired: 'Short voice note introducing yourself and your network',
+  duration: 'Ongoing (weekly)',
+  startDate: 'Within 3 days of approval',
+};
+
+const similarGigs = [
+  {
+    id: 3,
+    title: 'Sell Handmade Soaps at Church',
+    type: 'sales',
+    matchScore: 78,
+    estimatedEarnings: '₦5,000 – ₦20,000',
+    businessName: 'NaturalGlow NG',
+    verified: false,
+  },
+  {
+    id: 4,
+    title: 'Campus Rep — Skin Serum Brand',
+    type: 'sales',
+    matchScore: 74,
+    estimatedEarnings: '₦10,000 – ₦18,000',
+    businessName: 'GlowUp NG',
+    verified: true,
+  },
+];
+
+export default function GigDetail() {
+  const navigate = useNavigate();
+
+  const matchColor = (score: number) => {
+    if (score >= 90) return 'bg-[#1F5F5B] text-white';
+    if (score >= 75) return 'bg-[#F4B942] text-[#1a1a1a]';
+    return 'bg-[#e5e7eb] text-[#6b7280]';
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f9fafb] pb-28">
+      {/* Nav */}
+      <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-[#1a1a1a]" />
+          </button>
+          <span className="text-base text-[#1a1a1a]">Gig Detail</span>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+        {/* Hero */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs ${
+              gig.type === 'sales' ? 'bg-[#F4B942]/10 text-[#b5851f]' : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
+            }`}>
+              {gig.type === 'sales'
+                ? <ShoppingBag className="w-3.5 h-3.5" />
+                : <Wrench className="w-3.5 h-3.5" />
+              }
+              {gig.type === 'sales' ? 'Sales Gig' : 'Task'}
+            </span>
+            <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${matchColor(gig.matchScore)}`}>
+              <Zap className="w-3 h-3" />
+              {gig.matchScore}% match
+            </span>
+          </div>
+          <h1 className="text-2xl text-[#1a1a1a] mb-1">{gig.title}</h1>
+          <div className="flex items-center gap-1.5 text-sm text-[#6b7280]">
+            <Clock className="w-4 h-4" />
+            <span>{gig.duration}</span>
+            <span className="text-[#d1d5db]">·</span>
+            <span>Starts {gig.startDate}</span>
+          </div>
+        </div>
+
+        {/* Owner Card */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-lg text-[#1F5F5B]">
+              {gig.businessName[0]}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="text-base text-[#1a1a1a]">{gig.businessName}</span>
+                {gig.verified && (
+                  <CheckCircle className="w-4 h-4 text-[#1F5F5B]" />
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-sm text-[#6b7280]">
+                <span className="flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 text-[#F4B942] fill-[#F4B942]" />
+                  {gig.rating} ({gig.totalReviews} reviews)
+                </span>
+                <span className="text-[#d1d5db]">·</span>
+                <span>{gig.totalGigs} gigs completed</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 px-3 py-1.5 bg-[#1F5F5B]/5 rounded-lg">
+              <Shield className="w-4 h-4 text-[#1F5F5B]" />
+              <span className="text-xs text-[#1F5F5B]">Verified</span>
+            </div>
+          </div>
+          <p className="text-xs text-[#6b7280] mt-3">Member since {gig.memberSince}</p>
+        </div>
+
+        {/* Pay Info */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+          <h2 className="text-base text-[#1a1a1a] mb-4">Pay breakdown</h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6]">
+              <span className="text-sm text-[#6b7280]">Pay type</span>
+              <span className="text-sm text-[#1a1a1a]">
+                {gig.commission ? `${gig.commission} commission` : `Fixed — ${gig.fixedPrice}`}
+              </span>
+            </div>
+            {gig.pricePerUnit && (
+              <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6]">
+                <span className="text-sm text-[#6b7280]">Price per unit</span>
+                <span className="text-sm text-[#1a1a1a]">{gig.pricePerUnit}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-sm text-[#6b7280]">Estimated weekly earnings</span>
+              <div className="text-right">
+                <p className="text-base text-[#1F5F5B]">{gig.estimatedEarnings}</p>
+                <p className="text-xs text-[#6b7280]">{gig.earningsNote}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+          <h2 className="text-base text-[#1a1a1a] mb-3">About this gig</h2>
+          <p className="text-sm text-[#6b7280] leading-relaxed">{gig.description}</p>
+        </div>
+
+        {/* Location */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+          <h2 className="text-base text-[#1a1a1a] mb-3">Location</h2>
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 bg-[#1F5F5B]/5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <MapPin className="w-5 h-5 text-[#1F5F5B]" />
+            </div>
+            <div>
+              <p className="text-sm text-[#1a1a1a] mb-0.5">{gig.location}</p>
+              <p className="text-xs text-[#6b7280]">{gig.locationNote}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Requirements */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+          <h2 className="text-base text-[#1a1a1a] mb-4">Requirements</h2>
+          <div className="space-y-2 mb-4">
+            {gig.requirements.map((req, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <CheckCircle className="w-4 h-4 text-[#1F5F5B] flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-[#6b7280]">{req}</span>
+              </div>
+            ))}
+          </div>
+          <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4">
+            <p className="text-xs text-[#6b7280] mb-1">Skill level</p>
+            <p className="text-sm text-[#1a1a1a]">{gig.skillLevel}</p>
+          </div>
+          <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4 mt-3">
+            <p className="text-xs text-[#6b7280] mb-1">What to submit with application</p>
+            <p className="text-sm text-[#1a1a1a]">{gig.evidenceRequired}</p>
+          </div>
+        </div>
+
+        {/* Similar Gigs */}
+        <div>
+          <h2 className="text-base text-[#1a1a1a] mb-3">Similar gigs for you</h2>
+          <div className="space-y-3">
+            {similarGigs.map(g => (
+              <Link
+                key={g.id}
+                to={`/gig/${g.id}`}
+                className="flex items-center justify-between bg-white border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1F5F5B]/30 transition-colors"
+              >
+                <div className="flex-1 min-w-0 mr-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`px-2 py-0.5 rounded text-xs ${
+                      g.type === 'sales' ? 'bg-[#F4B942]/10 text-[#b5851f]' : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
+                    }`}>
+                      {g.type === 'sales' ? 'Sales' : 'Task'}
+                    </span>
+                    <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs ${matchColor(g.matchScore)}`}>
+                      <Zap className="w-2.5 h-2.5" />
+                      {g.matchScore}%
+                    </span>
+                  </div>
+                  <p className="text-sm text-[#1a1a1a] truncate">{g.title}</p>
+                  <p className="text-xs text-[#6b7280]">{g.estimatedEarnings}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#d1d5db] flex-shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Apply CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-4">
+        <div className="max-w-2xl mx-auto">
+          <button className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors">
+            Apply for this Gig
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

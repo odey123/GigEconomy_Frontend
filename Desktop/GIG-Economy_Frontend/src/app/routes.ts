@@ -9,6 +9,8 @@ import OwnerDashboard from "./pages/OwnerDashboard";
 import PostGigPicker from "./pages/PostGigPicker";
 import PostGigSales from "./pages/PostGigSales";
 import PostGigTask from "./pages/PostGigTask";
+import HelperDashboard from "./pages/HelperDashboard";
+import GigDetail from "./pages/GigDetail";
 
 export const router = createBrowserRouter([
   {
@@ -50,5 +52,13 @@ export const router = createBrowserRouter([
   {
     path: "/post-gig/task",
     Component: PostGigTask,
+  },
+  {
+    path: "/helper-dashboard",
+    Component: HelperDashboard,
+  },
+  {
+    path: "/gig/:id",
+    Component: GigDetail,
   },
 ]);
