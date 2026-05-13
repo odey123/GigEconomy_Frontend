@@ -69,6 +69,7 @@ export default function GigDetail() {
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
+            aria-label="Go back"
             onClick={() => navigate(-1)}
             className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
           >

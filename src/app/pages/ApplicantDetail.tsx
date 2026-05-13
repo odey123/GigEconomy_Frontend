@@ -71,6 +71,7 @@ export default function ApplicantDetail() {
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
+            aria-label="Go back"
             onClick={() => navigate(`/gig/${id}/applicants`)}
             className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
           >
@@ -209,10 +210,11 @@ export default function ApplicantDetail() {
           {/* Rejection reason textarea — slides in */}
           {rejecting && (
             <div>
-              <label className="block text-xs text-[#6b7280] mb-1.5">
+              <label htmlFor="rejection-reason" className="block text-xs text-[#6b7280] mb-1.5">
                 Reason (optional — helps the applicant improve)
               </label>
               <textarea
+                id="rejection-reason"
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
                 placeholder="e.g., We needed someone closer to campus..."

@@ -216,15 +216,17 @@ export default function ProfileSetupHelper() {
                   <label className="block text-sm mb-3 text-[#1a1a1a]">Typical hours</label>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-[#6b7280] mb-1 block">From</label>
+                      <label htmlFor="avail-from" className="text-xs text-[#6b7280] mb-1 block">From</label>
                       <input
+                        id="avail-from"
                         type="time"
                         className="w-full px-4 py-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-[#6b7280] mb-1 block">To</label>
+                      <label htmlFor="avail-to" className="text-xs text-[#6b7280] mb-1 block">To</label>
                       <input
+                        id="avail-to"
                         type="time"
                         className="w-full px-4 py-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                       />

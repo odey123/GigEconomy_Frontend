@@ -77,7 +77,7 @@ export default function HelperDashboard() {
             <p className="text-sm text-[#6b7280]">Here's what's matched for you</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 hover:bg-[#f9fafb] rounded-lg transition-colors">
+            <button aria-label="Notifications" className="relative p-2 hover:bg-[#f9fafb] rounded-lg transition-colors">
               <Bell className="w-6 h-6 text-[#6b7280]" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-[#F4B942] rounded-full" />
             </button>

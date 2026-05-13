@@ -13,6 +13,12 @@ import HelperDashboard from "./pages/HelperDashboard";
 import GigDetail from "./pages/GigDetail";
 import ApplicantsList from "./pages/ApplicantsList";
 import ApplicantDetail from "./pages/ApplicantDetail";
+import MatchConfirmed from "./pages/MatchConfirmed";
+import MyContracts from "./pages/MyContracts";
+import ContractDetailSales from "./pages/ContractDetailSales";
+import ContractDetailTask from "./pages/ContractDetailTask";
+import Wallet from "./pages/Wallet";
+import CustomerPayment from "./pages/CustomerPayment";
 
 export const router = createBrowserRouter([
   {
@@ -70,5 +76,29 @@ export const router = createBrowserRouter([
   {
     path: "/gig/:id/applicants/:applicantId",
     Component: ApplicantDetail,
+  },
+  {
+    path: "/gig/:id/applicants/:applicantId/approved",
+    Component: MatchConfirmed,
+  },
+  {
+    path: "/contracts",
+    Component: MyContracts,
+  },
+  {
+    path: "/contracts/:id",
+    Component: ContractDetailSales,
+  },
+  {
+    path: "/contracts/:id/task",
+    Component: ContractDetailTask,
+  },
+  {
+    path: "/wallet",
+    Component: Wallet,
+  },
+  {
+    path: "/pay/:linkId",
+    Component: CustomerPayment,
   },
 ]);

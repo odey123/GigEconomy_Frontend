@@ -160,15 +160,17 @@ export default function PostGigSales() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-[#6b7280] mb-1 block">From</label>
+                      <label htmlFor="pickup-from" className="text-xs text-[#6b7280] mb-1 block">From</label>
                       <input
+                        id="pickup-from"
                         type="time"
                         className="w-full px-4 py-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-[#6b7280] mb-1 block">To</label>
+                      <label htmlFor="pickup-to" className="text-xs text-[#6b7280] mb-1 block">To</label>
                       <input
+                        id="pickup-to"
                         type="time"
                         className="w-full px-4 py-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                       />
