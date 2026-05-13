@@ -1,152 +1,79 @@
-# EcoRoutes Backend API
+# GigEconomy Nigeria
 
-Backend API for the EcoRoutes Logistics Management System built with Node.js, Express, and TypeScript.
+Micro-employment infrastructure for Nigeria — connecting small businesses with flexible helpers, powered by Squad.
 
-## 🔗 Related Repositories
+## What it does
 
-- **Frontend**: [eco-routes-frontend](https://github.com/eco-routes-logistics/eco-routes-frontend)
-- **Main Docs**: [eco-routes](https://github.com/eco-routes-logistics/eco-routes)
-- **Organization**: [eco-routes-logistics](https://github.com/eco-routes-logistics)
+GigEconomy Nigeria is a two-sided marketplace that lets small business owners post flexible gigs (sales commission or one-off tasks) and get matched with skilled local helpers. The platform handles matching, contracts, and payments end-to-end.
 
-## 🚀 Tech Stack
+**Owners** post gigs, review AI-matched applicants, approve helpers, and track earnings.  
+**Helpers** browse matched gigs, apply, and get paid securely through Squad.
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Security**: Helmet, CORS
-- **Logging**: Morgan
+## Stack
 
-## 📁 Project Structure
+- **React 18** + **TypeScript**
+- **Vite** — build tooling
+- **Tailwind CSS v4** — styling
+- **shadcn/ui** (Radix UI) — component library
+- **React Router v7** — client-side routing
+- **react-hook-form** — form handling
+- **Recharts** — data visualisation
+- **Squad** — payment infrastructure
 
-```
-src/
-├── controllers/      # Route controllers
-│   ├── auth.controller.ts
-│   ├── order.controller.ts
-│   ├── rider.controller.ts
-│   └── client.controller.ts
-├── routes/          # API routes
-│   ├── index.ts
-│   ├── auth.routes.ts
-│   ├── order.routes.ts
-│   ├── rider.routes.ts
-│   └── client.routes.ts
-├── middleware/      # Express middleware
-│   └── errorHandler.ts
-└── server.ts        # Application entry point
-```
+## Getting started
 
-## 🛠️ Getting Started
-
-### Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone https://github.com/eco-routes-logistics/eco-routes-backend.git
-cd eco-routes-backend
-```
-
-2. Install dependencies
 ```bash
 npm install
-```
-
-3. Set up environment variables
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-### Development
-
-Start the development server with auto-reload:
-```bash
 npm run dev
 ```
 
-The server will start on `http://localhost:5000`
+The dev server runs at `http://localhost:5173`.
 
-### Build
+Create a `.env` file to point at your backend:
 
-Compile TypeScript to JavaScript:
-```bash
-npm run build
+```
+VITE_API_BASE_URL=http://localhost:5000/api/v1
 ```
 
-### Production
+## Project structure
 
-Run the compiled code:
-```bash
-npm start
+```
+src/
+├── app/
+│   ├── components/
+│   │   ├── ui/          # shadcn/ui primitives
+│   │   └── figma/       # Figma-exported helpers
+│   ├── pages/           # One file per route
+│   └── routes.ts        # React Router config
+├── lib/
+│   └── api.ts           # Typed fetch client + ApiError
+├── types/
+│   └── index.ts         # Shared TypeScript interfaces
+├── styles/              # Global CSS + Tailwind entry
+└── main.tsx
 ```
 
-## 📍 API Endpoints
+## Key pages
 
-### Health Check
-- `GET /health` - Server health status
+| Route | Page |
+|---|---|
+| `/` | Landing |
+| `/signup` | Sign up (owner or helper) |
+| `/verify-bvn` | BVN identity verification |
+| `/dashboard` | Owner dashboard |
+| `/helper-dashboard` | Helper matched gigs feed |
+| `/post-gig` | Post a new gig |
+| `/gig/:id` | Gig detail (helper view) |
+| `/gig/:id/applicants` | Applicants list (owner view) |
+| `/gig/:id/applicants/:applicantId` | Applicant detail + approve/reject |
 
-### API Info
-- `GET /api/v1` - API version and available endpoints
+## Colour tokens
 
-### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - User login
-- `POST /api/v1/auth/logout` - User logout
-- `GET /api/v1/auth/me` - Get current user
-
-### Orders
-- `GET /api/v1/orders` - Get all orders
-- `GET /api/v1/orders/:id` - Get order by ID
-- `POST /api/v1/orders` - Create new order
-- `PUT /api/v1/orders/:id` - Update order
-- `DELETE /api/v1/orders/:id` - Delete order
-- `PATCH /api/v1/orders/:id/status` - Update order status
-
-### Riders
-- `GET /api/v1/riders` - Get all riders
-- `GET /api/v1/riders/:id` - Get rider by ID
-- `POST /api/v1/riders` - Create new rider
-- `PUT /api/v1/riders/:id` - Update rider
-- `DELETE /api/v1/riders/:id` - Delete rider
-- `GET /api/v1/riders/:id/orders` - Get rider's orders
-
-### Clients
-- `GET /api/v1/clients` - Get all clients
-- `GET /api/v1/clients/:id` - Get client by ID
-- `POST /api/v1/clients` - Create new client
-- `PUT /api/v1/clients/:id` - Update client
-- `DELETE /api/v1/clients/:id` - Delete client
-
-## 🔧 Environment Variables
-
-See `.env.example` for all available configuration options:
-
-- `PORT` - Server port (default: 5000)
-- `NODE_ENV` - Environment mode (development/production)
-- `FRONTEND_URL` - Frontend URL for CORS
-- `API_PREFIX` - API route prefix
-
-## 🚧 Next Steps
-
-This is the initial backend structure. Next implementations:
-
-1. **Database Integration** - Set up PostgreSQL with Prisma/TypeORM
-2. **Authentication** - Implement JWT-based authentication
-3. **Validation** - Add request validation middleware
-4. **Database Models** - Create models for orders, riders, clients, etc.
-5. **Business Logic** - Implement actual controller logic
-6. **Testing** - Add unit and integration tests
-7. **API Documentation** - Set up Swagger/OpenAPI docs
-
-## 📄 License
-
-Proprietary - All rights reserved
-
-## 👥 Team
-
-Built with ❤️ by the EcoRoutes team
+| Token | Value | Use |
+|---|---|---|
+| Primary | `#1F5F5B` | CTAs, active states, teal brand |
+| Accent | `#F4B942` | Badges, highlights, amber brand |
+| Text | `#1a1a1a` | Body text |
+| Muted | `#6b7280` | Secondary text |
+| Border | `#e5e7eb` | Card borders |
+| Background | `#f9fafb` | Page background |

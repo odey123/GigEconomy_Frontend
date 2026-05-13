@@ -11,6 +11,8 @@ import PostGigSales from "./pages/PostGigSales";
 import PostGigTask from "./pages/PostGigTask";
 import HelperDashboard from "./pages/HelperDashboard";
 import GigDetail from "./pages/GigDetail";
+import ApplicantsList from "./pages/ApplicantsList";
+import ApplicantDetail from "./pages/ApplicantDetail";
 
 export const router = createBrowserRouter([
   {
@@ -60,5 +62,13 @@ export const router = createBrowserRouter([
   {
     path: "/gig/:id",
     Component: GigDetail,
+  },
+  {
+    path: "/gig/:id/applicants",
+    Component: ApplicantsList,
+  },
+  {
+    path: "/gig/:id/applicants/:applicantId",
+    Component: ApplicantDetail,
   },
 ]);
