@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, Info, ShoppingBag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { gigsService } from '../../lib/services/gigs';
+import { ApiError } from '../../lib/api';
 
 export default function PostGigSales() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function PostGigSales() {
   const [productName, setProductName] = useState('');
   const [stock, setStock] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const commissionAmount = productPrice ? (parseFloat(productPrice) * commission / 100).toFixed(2) : '0.00';
 
@@ -49,7 +51,14 @@ export default function PostGigSales() {
                     stockAvailable: parseInt(stock) || 0,
                     starterStockValue: parseInt(stock) * (parseFloat(productPrice) || 0),
                   });
-                } catch { /* optimistic — navigate regardless */ }
+                } catch (e) {
+                  if (e instanceof ApiError && e.message?.toLowerCase().includes('wallet')) {
+                    setLoading(false);
+                    setError('You need to set up your wallet first before posting a gig.');
+                    return;
+                  }
+                  // optimistic for other errors
+                }
                 setLoading(false);
                 navigate('/dashboard');
               }}>
@@ -215,6 +224,15 @@ export default function PostGigSales() {
                   placeholder="Any additional information helpers should know..."
                 />
               </div>
+
+              {error && (
+                <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {error}{' '}
+                  <Link to="/verify-bvn" className="underline font-medium">
+                    Set up wallet →
+                  </Link>
+                </div>
+              )}
 
               {/* Submit Button */}
               <button

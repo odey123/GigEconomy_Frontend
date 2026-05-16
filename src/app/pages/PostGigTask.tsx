@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, Info, Wrench, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { gigsService } from '../../lib/services/gigs';
+import { ApiError } from '../../lib/api';
 
 export default function PostGigTask() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function PostGigTask() {
   const [skillLevel, setSkillLevel] = useState('any');
   const [skillCategory, setSkillCategory] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-white">
@@ -44,7 +46,14 @@ export default function PostGigTask() {
                     evidenceRequired: 'none',
                     fixedPrice: parseFloat(price) || 0,
                   });
-                } catch { /* optimistic — navigate regardless */ }
+                } catch (e) {
+                  if (e instanceof ApiError && e.message?.toLowerCase().includes('wallet')) {
+                    setLoading(false);
+                    setError('You need to set up your wallet first before posting a gig.');
+                    return;
+                  }
+                  // optimistic for other errors
+                }
                 setLoading(false);
                 navigate('/dashboard');
               }}>
@@ -209,6 +218,15 @@ export default function PostGigTask() {
                 />
               </div>
 
+              {error && (
+                <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {error}{' '}
+                  <Link to="/verify-bvn" className="underline font-medium">
+                    Set up wallet →
+                  </Link>
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -273,7 +291,7 @@ export default function PostGigTask() {
                 </p>
               </div>
 
-              <button className="w-full mt-6 bg-[#1F5F5B] text-white py-3 rounded-lg">
+              <button type="button" className="w-full mt-6 bg-[#1F5F5B] text-white py-3 rounded-lg">
                 Apply for This Task
               </button>
             </div>
