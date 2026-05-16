@@ -50,6 +50,7 @@ export default function ApplicantDetail() {
   const navigate = useNavigate();
 
   const [applicant, setApplicant] = useState(MOCK_APPLICANT);
+  const [loadedFromApi, setLoadedFromApi] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -76,24 +77,27 @@ export default function ApplicantDetail() {
         }
 
         const lastName = (helper?.lastName ?? '') as string;
+        const firstName = (helper?.firstName ?? '') as string;
+        setLoadedFromApi(true);
         setApplicant(prev => ({
-          ...prev,
+          // Only keep mock values for fields the API genuinely doesn't return
+          ...MOCK_APPLICANT,
           id: data.id,
-          firstName: (helper?.firstName ?? prev.firstName) as string,
-          lastInitial: lastName[0] ?? prev.lastInitial,
-          verified: (helper?.verified ?? prev.verified) as boolean,
-          approximateLocation: (helper?.approximateLocation ?? helper?.location ?? prev.approximateLocation) as string,
+          firstName: firstName || 'Worker',
+          lastInitial: lastName[0] ?? '',
+          verified: (helper?.verified ?? false) as boolean,
+          approximateLocation: (helper?.approximateLocation ?? helper?.location ?? '') as string,
           memberSince: helper?.createdAt
             ? new Date(helper.createdAt as string).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-            : prev.memberSince,
-          appliedAt: (data.appliedAt ?? prev.appliedAt) as string,
-          rating: (helper?.averageRating ?? helper?.rating ?? prev.rating) as number,
-          completedGigs: (helper?.completedGigs ?? prev.completedGigs) as number,
+            : '',
+          appliedAt: (data.appliedAt ?? '') as string,
+          rating: (helper?.averageRating ?? helper?.rating ?? 0) as number,
+          completedGigs: (helper?.completedGigs ?? 0) as number,
           totalEarnings: prev.totalEarnings,
-          matchScore: (data.matchScore ?? prev.matchScore) as number,
-          matchReasoning: (data.matchReasoning ?? prev.matchReasoning) as string,
-          coverNote: (data.coverNote ?? raw.deliverables ?? prev.coverNote) as string,
-          skills: ((helper?.skills as typeof prev.skills) ?? prev.skills),
+          matchScore: (data.matchScore ?? 0) as number,
+          matchReasoning: (data.matchReasoning ?? '') as string,
+          coverNote: (data.coverNote ?? raw.deliverables ?? '') as string,
+          skills: ((helper?.skills as typeof prev.skills) ?? []),
           reviews: prev.reviews,
         }));
       })
