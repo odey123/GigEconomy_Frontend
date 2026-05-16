@@ -46,7 +46,7 @@ export default function SignUp() {
         firstName,
         lastName,
         email,
-        phone: `234${phone.replace(/^0/, '')}`,
+        phone,
         password,
         role: accountType === 'business' ? 'client' : 'worker',
       });
@@ -147,17 +147,15 @@ export default function SignUp() {
 
           <div>
             <label htmlFor="phone" className="block text-sm mb-2 text-[#1a1a1a]">Phone Number</label>
-            <div className="flex gap-2">
-              <div className="w-20 px-3 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[#6b7280] flex items-center justify-center">
-                +234
-              </div>
-              <input
+            <input
                 type="tel" id="phone" required value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className="flex-1 px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
-                placeholder="8012345678"
+                onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                maxLength={11}
+                pattern="0[0-9]{10}"
+                title="Must be 11 digits starting with 0 (e.g. 08012345678)"
+                className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+                placeholder="08012345678"
               />
-            </div>
           </div>
 
           <div>

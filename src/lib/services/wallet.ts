@@ -17,10 +17,9 @@ export const walletService = {
     firstName: string;
     lastName: string;
     middleName?: string;
-    dateOfBirth: string;   // mm/dd/yyyy — Squad format
-    gender: string;         // "1" = Male, "2" = Female
+    dateOfBirth: string;  // mm/dd/yyyy — Squad format
+    gender: string;        // "1" = Male, "2" = Female
     address: string;
-    beneficiaryAccount?: string;
   }) => {
     // Response: { status, message, data: { wallet: { ... } } }
     return api.post<{ status: string; message: string }>('/api/users/wallet/create', payload);

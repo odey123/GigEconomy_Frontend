@@ -33,11 +33,10 @@ export default function BVNVerification() {
         bvn,
         firstName,
         lastName,
-        middleName,
-        dateOfBirth: toSquadDob(dob), // converts to mm/dd/yyyy
-        gender,                         // "1" = Male, "2" = Female
+        ...(middleName ? { middleName } : {}),
+        dateOfBirth: toSquadDob(dob),
+        gender,
         address,
-        beneficiaryAccount: '',
       });
       navigate(user?.role === 'client' ? '/profile-setup/owner' : '/profile-setup/helper');
     } catch (err) {
