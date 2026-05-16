@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { ChevronLeft, Info, ShoppingBag } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { gigsService } from '../../lib/services/gigs';
 
 export default function PostGigSales() {
+  const navigate = useNavigate();
   const [commission, setCommission] = useState(15);
   const [productPrice, setProductPrice] = useState('');
   const [productName, setProductName] = useState('');
   const [stock, setStock] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const commissionAmount = productPrice ? (parseFloat(productPrice) * commission / 100).toFixed(2) : '0.00';
 
@@ -28,7 +31,22 @@ export default function PostGigSales() {
               <p className="text-[#6b7280]">Set up your commission-based sales opportunity</p>
             </div>
 
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={async e => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                  await gigsService.create({
+                    workType: 'sales',
+                    title: `Sell ${productName}`,
+                    productName,
+                    productPrice: parseFloat(productPrice) || 0,
+                    commissionPercent: commission,
+                    stockAvailable: parseInt(stock) || 0,
+                  });
+                } catch { /* optimistic — navigate regardless */ }
+                setLoading(false);
+                navigate('/dashboard');
+              }}>
               {/* Product Name */}
               <div>
                 <label htmlFor="productName" className="block text-sm mb-2 text-[#1a1a1a]">
@@ -195,9 +213,10 @@ export default function PostGigSales() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-3.5 rounded-lg transition-colors"
+                disabled={loading}
+                className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white py-3.5 rounded-lg transition-colors"
               >
-                Post Gig
+                {loading ? 'Posting…' : 'Post Gig'}
               </button>
             </form>
           </div>
@@ -244,7 +263,7 @@ export default function PostGigSales() {
                 <p className="text-sm text-[#1a1a1a]">Location will appear here</p>
               </div>
 
-              <button className="w-full mt-6 bg-[#1F5F5B] text-white py-3 rounded-lg">
+              <button type="button" className="w-full mt-6 bg-[#1F5F5B] text-white py-3 rounded-lg">
                 Apply for This Gig
               </button>
             </div>

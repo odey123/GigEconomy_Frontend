@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, MapPin, Star, Zap, ShoppingBag, Wrench, Clock, Shield, ChevronRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
+import { gigsService } from '../../lib/services/gigs';
+import { bookingsService } from '../../lib/services/bookings';
 
-const gig = {
+const MOCK_GIG = {
   id: 1,
   title: 'Sell Parfait at Unilag Campus',
   type: 'sales',
@@ -55,7 +58,31 @@ const similarGigs = [
 ];
 
 export default function GigDetail() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [gig, setGig] = useState(MOCK_GIG);
+  const [applied, setApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    gigsService.getById(id)
+      .then(data => { if (data?.id) setGig(data as typeof MOCK_GIG); })
+      .catch(() => {});
+  }, [id]);
+
+  const handleApply = async () => {
+    if (!id) return;
+    setApplying(true);
+    try {
+      await bookingsService.create({ jobId: id });
+    } catch {
+      // optimistic — continue either way
+    } finally {
+      setApplying(false);
+      setApplied(true);
+    }
+  };
 
   const matchColor = (score: number) => {
     if (score >= 90) return 'bg-[#1F5F5B] text-white';
@@ -65,10 +92,10 @@ export default function GigDetail() {
 
   return (
     <div className="min-h-screen bg-[#f9fafb] pb-28">
-      {/* Nav */}
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
+            type="button"
             aria-label="Go back"
             onClick={() => navigate(-1)}
             className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
@@ -80,16 +107,12 @@ export default function GigDetail() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
-        {/* Hero */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs ${
               gig.type === 'sales' ? 'bg-[#F4B942]/10 text-[#b5851f]' : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
             }`}>
-              {gig.type === 'sales'
-                ? <ShoppingBag className="w-3.5 h-3.5" />
-                : <Wrench className="w-3.5 h-3.5" />
-              }
+              {gig.type === 'sales' ? <ShoppingBag className="w-3.5 h-3.5" /> : <Wrench className="w-3.5 h-3.5" />}
               {gig.type === 'sales' ? 'Sales Gig' : 'Task'}
             </span>
             <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${matchColor(gig.matchScore)}`}>
@@ -106,7 +129,6 @@ export default function GigDetail() {
           </div>
         </div>
 
-        {/* Owner Card */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-lg text-[#1F5F5B]">
@@ -115,9 +137,7 @@ export default function GigDetail() {
             <div className="flex-1">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className="text-base text-[#1a1a1a]">{gig.businessName}</span>
-                {gig.verified && (
-                  <CheckCircle className="w-4 h-4 text-[#1F5F5B]" />
-                )}
+                {gig.verified && <CheckCircle className="w-4 h-4 text-[#1F5F5B]" />}
               </div>
               <div className="flex items-center gap-3 text-sm text-[#6b7280]">
                 <span className="flex items-center gap-1">
@@ -136,7 +156,6 @@ export default function GigDetail() {
           <p className="text-xs text-[#6b7280] mt-3">Member since {gig.memberSince}</p>
         </div>
 
-        {/* Pay Info */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-4">Pay breakdown</h2>
           <div className="space-y-3">
@@ -162,13 +181,11 @@ export default function GigDetail() {
           </div>
         </div>
 
-        {/* Description */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-3">About this gig</h2>
           <p className="text-sm text-[#6b7280] leading-relaxed">{gig.description}</p>
         </div>
 
-        {/* Location */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-3">Location</h2>
           <div className="flex items-start gap-3">
@@ -182,7 +199,6 @@ export default function GigDetail() {
           </div>
         </div>
 
-        {/* Requirements */}
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-4">Requirements</h2>
           <div className="space-y-2 mb-4">
@@ -203,7 +219,6 @@ export default function GigDetail() {
           </div>
         </div>
 
-        {/* Similar Gigs */}
         <div>
           <h2 className="text-base text-[#1a1a1a] mb-3">Similar gigs for you</h2>
           <div className="space-y-3">
@@ -235,12 +250,23 @@ export default function GigDetail() {
         </div>
       </div>
 
-      {/* Sticky Apply CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-4">
         <div className="max-w-2xl mx-auto">
-          <button className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors">
-            Apply for this Gig
-          </button>
+          {applied ? (
+            <div className="flex items-center justify-center gap-2 py-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
+              <CheckCircle className="w-4 h-4" />
+              Application submitted!
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={applying}
+              className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white py-4 rounded-xl text-base transition-colors"
+            >
+              {applying ? 'Applying…' : 'Apply for this Gig'}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Copy, CheckCircle, Shield, ArrowDownLeft, ArrowUpRight, Home, Briefcase, User } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { walletService } from '../../lib/services/wallet';
 
 type TabKey = 'all' | 'credits' | 'debits';
 type TxType = 'credit' | 'debit';
@@ -114,8 +115,19 @@ export default function Wallet() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [accountCopied, setAccountCopied] = useState(false);
+  const [balance, setBalance] = useState('₦87,500');
+  const [txList, setTxList] = useState(transactions);
 
-  const visible = transactions.filter(t => {
+  useEffect(() => {
+    walletService.getBalance()
+      .then(w => { if (w?.balance != null) setBalance(`₦${w.balance.toLocaleString()}`); })
+      .catch(() => {});
+    walletService.getTransactions({ limit: 20 })
+      .then(data => { if (data?.transactions?.length) setTxList(data.transactions as typeof transactions); })
+      .catch(() => {});
+  }, []);
+
+  const visible = txList.filter(t => {
     if (activeTab === 'credits') return t.type === 'credit';
     if (activeTab === 'debits') return t.type === 'debit';
     return true;
@@ -147,7 +159,7 @@ export default function Wallet() {
         {/* Hero Balance Card */}
         <div className="bg-gradient-to-br from-[#1F5F5B] to-[#1a4f4c] rounded-xl p-6 text-white">
           <p className="text-white/60 text-xs mb-1">Available balance</p>
-          <p className="text-4xl text-white mb-5">₦87,500</p>
+          <p className="text-4xl text-white mb-5">{balance}</p>
 
           {/* Virtual Account */}
           <div className="bg-white/10 rounded-xl px-4 py-3 mb-5">

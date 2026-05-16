@@ -99,9 +99,10 @@ export default function ApplicantsList() {
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
         {/* Summary Row */}
+        {/* api.get('/bookings/my?gigId=...&status=pending') */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-[#6b7280]">
-            <span className="text-[#1a1a1a] font-medium">{mockApplicants.length}</span> applicants
+            <span className="text-[#1a1a1a] font-medium">{mockApplicants.length}</span> pending bookings
           </p>
           <select
             aria-label="Sort applicants"

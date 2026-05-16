@@ -1,8 +1,7 @@
 export type WorkType = 'sales' | 'task';
 export type UserRole = 'owner' | 'helper';
 export type SkillLevel = 'beginner' | 'intermediate' | 'expert';
-export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
-export type ContractStatus = 'active' | 'completed' | 'disputed' | 'cancelled';
+export type BookingStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
 
 export interface User {
   id: string;
@@ -96,19 +95,6 @@ export interface HelperSnippet {
   evidencePhotos?: string[];
 }
 
-export interface Application {
-  id: string;
-  gigId: string;
-  helperId: string;
-  status: ApplicationStatus;
-  coverNote: string;
-  matchScore: number;
-  matchReasoning: string;
-  appliedAt: string;
-  rejectionReason?: string;
-  helper?: HelperSnippet;
-}
-
 export interface MeetupDetails {
   address: string;
   landmark?: string;
@@ -116,15 +102,20 @@ export interface MeetupDetails {
   notes?: string;
 }
 
-export interface Contract {
+export interface Booking {
   id: string;
   gigId: string;
   ownerId: string;
   helperId: string;
-  applicationId: string;
-  status: ContractStatus;
-  startedAt: string;
+  bookingType: WorkType;
+  status: BookingStatus;
+  coverNote: string;
+  matchScore: number;
+  matchReasoning: string;
+  appliedAt: string;
+  startedAt?: string;
   completedAt?: string;
+  helper?: HelperSnippet;
 
   // sales-specific
   stockPickup?: MeetupDetails;

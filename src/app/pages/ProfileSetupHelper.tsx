@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { ShoppingBag, Wrench, MapPin, MessageCircle, Users, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { profileService } from '../../lib/services/profile';
 
 export default function ProfileSetupHelper() {
+  const navigate = useNavigate();
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(false);
 
   const toggleWorkType = (type: string) => {
     setSelectedWorkTypes(prev =>
@@ -37,7 +41,18 @@ export default function ProfileSetupHelper() {
           <p className="text-[#6b7280]">Select all that apply — you can do both!</p>
         </div>
 
-        <form className="space-y-8">
+        <form className="space-y-8" onSubmit={async e => {
+          e.preventDefault();
+          setLoading(true);
+          try {
+            await profileService.createHelperProfile({
+              workTypes: selectedWorkTypes as ('sales' | 'task')[],
+              skills: Object.entries(selectedSkills).map(([name, level]) => ({ name, level })),
+            });
+          } catch { /* optimistic */ }
+          setLoading(false);
+          navigate('/helper-dashboard');
+        }}>
           {/* Work Type Selection */}
           <div className="grid md:grid-cols-2 gap-4">
             {/* Selling Card */}
@@ -240,10 +255,10 @@ export default function ProfileSetupHelper() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={selectedWorkTypes.length === 0}
+            disabled={selectedWorkTypes.length === 0 || loading}
             className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:bg-[#d1d5db] disabled:cursor-not-allowed text-white py-3.5 rounded-lg transition-colors"
           >
-            Continue
+            {loading ? 'Saving…' : 'Continue'}
           </button>
         </form>
       </div>

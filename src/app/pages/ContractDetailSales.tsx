@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Copy, Share2, Wallet, CheckCircle, TrendingUp, Package, Zap } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
+import { contractsService } from '../../lib/services/contracts';
 
-const contract = {
+const MOCK_CONTRACT = {
   id: 'c1',
   gigTitle: 'Sell Parfait at Unilag Campus',
   businessName: 'Cravings by Sade',
@@ -80,9 +81,27 @@ function SquadBadge() {
 }
 
 export default function ContractDetailSales() {
-  useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [contract, setContract] = useState(MOCK_CONTRACT);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    contractsService.getSalesEarnings(id)
+      .then(data => {
+        if (data?.totalSales != null) {
+          setContract(prev => ({
+            ...prev,
+            totalEarnings: data.totalEarnings ?? prev.totalEarnings,
+            totalSales: data.totalSales ?? prev.totalSales,
+            commissionRate: data.commissionRate ?? prev.commissionRate,
+            paymentUrl: data.paymentUrl || prev.paymentUrl,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [id]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`https://${contract.paymentUrl}`).catch(() => {});

@@ -17,9 +17,10 @@ export default function MatchConfirmed() {
           </span>
         </div>
 
-        <h1 className="text-2xl text-[#1a1a1a] mb-2">Contract created!</h1>
+        {/* api.get(`/bookings/${id}`) — status should be 'accepted' */}
+        <h1 className="text-2xl text-[#1a1a1a] mb-2">Booking accepted!</h1>
         <p className="text-[#6b7280] mb-2 leading-relaxed">
-          You've approved the applicant. A contract has been created and both parties have been notified.
+          You've accepted this helper. The booking is confirmed and both parties have been notified.
         </p>
         <p className="text-sm text-[#6b7280] mb-8">
           Squad will facilitate payments automatically throughout the gig.

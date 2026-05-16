@@ -1,8 +1,17 @@
 import { useState } from 'react';
 import { Upload, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { profileService } from '../../lib/services/profile';
 
 export default function ProfileSetupOwner() {
+  const navigate = useNavigate();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('');
+  const [description, setDescription] = useState('');
+  const [address, setAddress] = useState('');
+  const [area, setArea] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,7 +44,19 @@ export default function ProfileSetupOwner() {
           <p className="text-[#6b7280]">This helps workers understand what you do</p>
         </div>
 
-        <form className="space-y-8">
+        <form className="space-y-8" onSubmit={async e => {
+          e.preventDefault();
+          setLoading(true);
+          try {
+            await profileService.createOwnerProfile({
+              businessName, businessType,
+              location: `${address}, ${area}`,
+              description,
+            });
+          } catch { /* optimistic */ }
+          setLoading(false);
+          navigate('/dashboard');
+        }}>
           {/* Section 1: Business Info */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6">
             <h2 className="text-lg mb-5 text-[#1a1a1a]">Business Information</h2>
@@ -49,6 +70,8 @@ export default function ProfileSetupOwner() {
                 <input
                   type="text"
                   id="businessName"
+                  value={businessName}
+                  onChange={e => setBusinessName(e.target.value)}
                   className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                   placeholder="e.g., Adaeze's Fashion House"
                   required
@@ -182,9 +205,10 @@ export default function ProfileSetupOwner() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-3.5 rounded-lg transition-colors"
+            disabled={loading}
+            className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white py-3.5 rounded-lg transition-colors"
           >
-            Continue
+            {loading ? 'Saving…' : 'Continue'}
           </button>
         </form>
       </div>

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Shield, Clock, CheckCircle, AlertTriangle, Upload, FileText, Calendar } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
+import { contractsService } from '../../lib/services/contracts';
 
 // TODO: replace with actual auth context value
 const role: 'helper' | 'owner' = 'helper';
 
-const contract = {
+const MOCK_CONTRACT = {
   id: 'c2',
   title: 'Sew 10 Ankara Midi Dresses',
   businessName: "Funmy's Fashion House",
@@ -51,22 +52,43 @@ const statusConfig = {
 };
 
 export default function ContractDetailTask() {
-  useParams<{ id: string }>();
+  // api.get(`/bookings/${id}`) — bookingType: 'task', status: 'accepted'
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [contract, setContract] = useState(MOCK_CONTRACT);
   const [workNotes, setWorkNotes] = useState('');
+  const [disputeReason, setDisputeReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
 
+  useEffect(() => {
+    if (!id) return;
+    contractsService.getById(id)
+      .then(data => { if (data?.id) setContract(data as typeof MOCK_CONTRACT); })
+      .catch(() => {});
+  }, [id]);
+
   const cfg = statusConfig[contract.status];
 
-  const handleSubmitWork = (e: React.FormEvent) => {
+  const handleSubmitWork = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      setSubmitted(true);
-    }, 1400);
+    try {
+      if (id) await contractsService.submitTask(id, { deliverableNotes: workNotes });
+    } catch { /* optimistic */ }
+    setSubmitting(false);
+    setSubmitted(true);
+  };
+
+  const handleApprove = async () => {
+    try { if (id) await contractsService.approveTask(id); } catch { /* optimistic */ }
+    setContract(prev => ({ ...prev, status: 'Approved' as typeof prev.status }));
+  };
+
+  const handleDispute = async () => {
+    try { if (id) await contractsService.disputeTask(id, { reason: disputeReason }); } catch { /* optimistic */ }
+    setDisputeOpen(false);
   };
 
   return (
@@ -76,6 +98,7 @@ export default function ContractDetailTask() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               aria-label="Go back"
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
@@ -139,15 +162,13 @@ export default function ContractDetailTask() {
           <div className="mt-4 flex items-center gap-2">
             <div className="flex-1 h-2 bg-[#f3f4f6] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#1F5F5B] rounded-full transition-all"
-                style={{
-                  width:
-                    contract.status === 'Approved'
-                      ? '100%'
-                      : contract.status === 'Work Submitted'
-                      ? '66%'
-                      : '33%',
-                }}
+                className={`h-full bg-[#1F5F5B] rounded-full transition-all ${
+                  contract.status === 'Approved'
+                    ? 'w-full'
+                    : contract.status === 'Work Submitted'
+                    ? 'w-2/3'
+                    : 'w-1/3'
+                }`}
               />
             </div>
             <span className="text-xs text-[#6b7280] whitespace-nowrap">{cfg.label}</span>
@@ -270,7 +291,7 @@ export default function ContractDetailTask() {
                       <p className="text-sm text-[#1a1a1a] truncate">{file.name}</p>
                       <p className="text-xs text-[#6b7280]">{file.size}</p>
                     </div>
-                    <button className="text-xs text-[#1F5F5B] hover:underline">View</button>
+                    <button type="button" className="text-xs text-[#1F5F5B] hover:underline">View</button>
                   </div>
                 ))}
               </div>
@@ -278,13 +299,14 @@ export default function ContractDetailTask() {
 
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setDisputeOpen(true)}
                 className="flex-1 py-3.5 border border-red-300 text-red-600 rounded-xl text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
               >
                 <AlertTriangle className="w-4 h-4" />
                 Open Dispute
               </button>
-              <button className="flex-1 py-3.5 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+              <button type="button" onClick={handleApprove} className="flex-1 py-3.5 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
                 <CheckCircle className="w-4 h-4" />
                 Approve &amp; Release
               </button>
@@ -298,17 +320,20 @@ export default function ContractDetailTask() {
                 <textarea
                   aria-label="Describe the dispute"
                   rows={3}
+                  value={disputeReason}
+                  onChange={e => setDisputeReason(e.target.value)}
                   placeholder="e.g., The dresses don't match the measurements provided…"
                   className="w-full px-3 py-2.5 text-sm border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 resize-none bg-white"
                 />
                 <div className="flex gap-2 mt-3">
                   <button
+                    type="button"
                     onClick={() => setDisputeOpen(false)}
                     className="flex-1 py-2.5 border border-[#e5e7eb] text-[#6b7280] rounded-lg text-sm hover:bg-white transition-colors"
                   >
                     Cancel
                   </button>
-                  <button className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors">
+                  <button type="button" onClick={handleDispute} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors">
                     Submit Dispute
                   </button>
                 </div>

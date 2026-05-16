@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Star, Zap, Sparkles, CheckCircle, Briefcase, Shield } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
+import { bookingsService } from '../../lib/services/bookings';
 
-const applicant = {
+const MOCK_APPLICANT = {
   id: 'a1',
   firstName: 'Tobi',
   lastInitial: 'A',
@@ -47,15 +48,28 @@ export default function ApplicantDetail() {
   const { id, applicantId } = useParams<{ id: string; applicantId: string }>();
   const navigate = useNavigate();
 
+  const [applicant, setApplicant] = useState(MOCK_APPLICANT);
   const [rejecting, setRejecting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const handleApprove = () => {
+  useEffect(() => {
+    if (!applicantId) return;
+    bookingsService.getById(applicantId)
+      .then(data => { if (data?.id) setApplicant(data as typeof MOCK_APPLICANT); })
+      .catch(() => {});
+  }, [applicantId]);
+
+  const handleApprove = async () => {
+    if (applicantId) {
+      try { await bookingsService.accept(applicantId); } catch { /* optimistic */ }
+    }
     navigate(`/gig/${id}/applicants/${applicantId}/approved`);
   };
 
-  const handleConfirmReject = () => {
-    // In production: call api.post(`/applications/${applicantId}/reject`, { reason: rejectionReason })
+  const handleConfirmReject = async () => {
+    if (applicantId) {
+      try { await bookingsService.cancel(applicantId); } catch { /* optimistic */ }
+    }
     navigate(`/gig/${id}/applicants`);
   };
 
@@ -252,7 +266,7 @@ export default function ApplicantDetail() {
                   onClick={handleApprove}
                   className="flex-1 py-3.5 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white rounded-xl text-sm transition-colors"
                 >
-                  Approve & Create Contract
+                  Accept Booking
                 </button>
               </>
             )}

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home, Briefcase, Wallet, User, ShoppingBag, Wrench, ChevronRight, FileX } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
+import { contractsService } from '../../lib/services/contracts';
 
 type TabKey = 'active' | 'completed' | 'disputed';
 
@@ -25,7 +26,7 @@ interface Contract {
   tab: TabKey;
 }
 
-const contracts: Contract[] = [
+const MOCK_CONTRACTS: Contract[] = [
   {
     id: 'c1',
     type: 'sales',
@@ -135,6 +136,13 @@ const emptyMessages: Record<TabKey, { heading: string; body: string }> = {
 export default function MyContracts() {
   const [activeTab, setActiveTab] = useState<TabKey>('active');
   const navigate = useNavigate();
+  const [contracts, setContracts] = useState(MOCK_CONTRACTS);
+
+  useEffect(() => {
+    contractsService.getAll()
+      .then(data => { if (Array.isArray(data) && data.length) setContracts(data as typeof MOCK_CONTRACTS); })
+      .catch(() => {});
+  }, []);
 
   const visible = contracts.filter(c => c.tab === activeTab);
 
@@ -156,6 +164,7 @@ export default function MyContracts() {
         <div className="flex gap-1 bg-[#f3f4f6] rounded-xl p-1">
           {tabLabels.map(t => (
             <button
+              type="button"
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
@@ -165,9 +174,9 @@ export default function MyContracts() {
               }`}
             >
               {t.label}
-              {t.key === 'disputed' && contracts.some(c => c.tab === 'disputed') && (
+              {t.key === 'disputed' && MOCK_CONTRACTS.some(c => c.tab === 'disputed') && (
                 <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 bg-red-500 text-white text-[10px] rounded-full">
-                  {contracts.filter(c => c.tab === 'disputed').length}
+                  {MOCK_CONTRACTS.filter(c => c.tab === 'disputed').length}
                 </span>
               )}
             </button>
@@ -253,24 +262,26 @@ export default function MyContracts() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button
+            type="button"
             onClick={() => navigate('/dashboard')}
             className="flex flex-col items-center gap-1 text-[#6b7280]"
           >
             <Home className="w-6 h-6" />
             <span className="text-xs">Home</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-[#1F5F5B]">
+          <button type="button" className="flex flex-col items-center gap-1 text-[#1F5F5B]">
             <Briefcase className="w-6 h-6" />
             <span className="text-xs">Contracts</span>
           </button>
           <button
+            type="button"
             onClick={() => navigate('/wallet')}
             className="flex flex-col items-center gap-1 text-[#6b7280]"
           >
             <Wallet className="w-6 h-6" />
             <span className="text-xs">Wallet</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-[#6b7280]">
+          <button type="button" className="flex flex-col items-center gap-1 text-[#6b7280]">
             <User className="w-6 h-6" />
             <span className="text-xs">Profile</span>
           </button>
