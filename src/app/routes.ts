@@ -19,6 +19,7 @@ import ContractDetailSales from "./pages/ContractDetailSales";
 import ContractDetailTask from "./pages/ContractDetailTask";
 import Wallet from "./pages/Wallet";
 import CustomerPayment from "./pages/CustomerPayment";
+import Profile from "./pages/Profile";
 
 export const router = createBrowserRouter([
   {
@@ -100,5 +101,9 @@ export const router = createBrowserRouter([
   {
     path: "/pay/:linkId",
     Component: CustomerPayment,
+  },
+  {
+    path: "/profile",
+    Component: Profile,
   },
 ]);

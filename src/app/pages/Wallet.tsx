@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Copy, CheckCircle, Shield, ArrowDownLeft, ArrowUpRight, Home, Briefcase, User } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { walletService } from '../../lib/services/wallet';
+import { useAuth } from '../../context/AuthContext';
 
 type TabKey = 'all' | 'credits' | 'debits';
 type TxType = 'credit' | 'debit';
@@ -113,6 +114,8 @@ const tabLabels: { key: TabKey; label: string }[] = [
 
 export default function Wallet() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const home = user?.role === 'owner' ? '/dashboard' : '/helper-dashboard';
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [accountCopied, setAccountCopied] = useState(false);
   const [balance, setBalance] = useState('₦87,500');
@@ -396,7 +399,7 @@ export default function Wallet() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(home)}
             className="flex flex-col items-center gap-1 text-[#6b7280]"
           >
             <Home className="w-6 h-6" />
@@ -416,7 +419,7 @@ export default function Wallet() {
             </svg>
             <span className="text-xs">Wallet</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-[#6b7280]">
+          <button type="button" onClick={() => navigate('/profile')} className="flex flex-col items-center gap-1 text-[#6b7280]">
             <User className="w-6 h-6" />
             <span className="text-xs">Profile</span>
           </button>

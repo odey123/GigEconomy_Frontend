@@ -235,7 +235,7 @@ export default function HelperDashboard() {
             <Wallet className="w-6 h-6" />
             <span className="text-xs">Wallet</span>
           </button>
-          <button type="button" className="flex flex-col items-center gap-1 text-[#6b7280]">
+          <button type="button" onClick={() => navigate('/profile')} className="flex flex-col items-center gap-1 text-[#6b7280]">
             <User className="w-6 h-6" />
             <span className="text-xs">Profile</span>
           </button>

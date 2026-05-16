@@ -105,7 +105,7 @@ export default function GigDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9fafb] pb-28">
+    <div className={`min-h-screen bg-[#f9fafb] ${showForm ? 'pb-96' : 'pb-28'}`}>
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
@@ -283,11 +283,10 @@ export default function GigDetail() {
             <form onSubmit={handleApply} className="space-y-3">
               <div>
                 <label htmlFor="deliverables" className="block text-xs text-[#6b7280] mb-1.5">
-                  What will you do? <span className="text-red-500">*</span>
+                  What will you do? <span className="text-[#9ca3af]">(optional)</span>
                 </label>
                 <textarea
                   id="deliverables"
-                  required
                   rows={3}
                   value={deliverables}
                   onChange={e => setDeliverables(e.target.value)}

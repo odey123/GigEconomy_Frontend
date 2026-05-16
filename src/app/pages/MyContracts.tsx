@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Home, Briefcase, Wallet, User, ShoppingBag, Wrench, ChevronRight, FileX } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { contractsService } from '../../lib/services/contracts';
+import { useAuth } from '../../context/AuthContext';
 
 type TabKey = 'active' | 'completed' | 'disputed';
 
@@ -136,6 +137,8 @@ const emptyMessages: Record<TabKey, { heading: string; body: string }> = {
 export default function MyContracts() {
   const [activeTab, setActiveTab] = useState<TabKey>('active');
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const home = user?.role === 'owner' ? '/dashboard' : '/helper-dashboard';
   const [contracts, setContracts] = useState(MOCK_CONTRACTS);
 
   useEffect(() => {
@@ -263,7 +266,7 @@ export default function MyContracts() {
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button
             type="button"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(home)}
             className="flex flex-col items-center gap-1 text-[#6b7280]"
           >
             <Home className="w-6 h-6" />
@@ -281,7 +284,7 @@ export default function MyContracts() {
             <Wallet className="w-6 h-6" />
             <span className="text-xs">Wallet</span>
           </button>
-          <button type="button" className="flex flex-col items-center gap-1 text-[#6b7280]">
+          <button type="button" onClick={() => navigate('/profile')} className="flex flex-col items-center gap-1 text-[#6b7280]">
             <User className="w-6 h-6" />
             <span className="text-xs">Profile</span>
           </button>
