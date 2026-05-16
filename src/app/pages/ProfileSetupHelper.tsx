@@ -8,6 +8,7 @@ export default function ProfileSetupHelper() {
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggleWorkType = (type: string) => {
     setSelectedWorkTypes(prev =>
@@ -44,14 +45,17 @@ export default function ProfileSetupHelper() {
         <form className="space-y-8" onSubmit={async e => {
           e.preventDefault();
           setLoading(true);
+          setError(null);
           try {
             await profileService.createHelperProfile({
               workTypes: selectedWorkTypes as ('sales' | 'task')[],
               skills: Object.entries(selectedSkills).map(([name, level]) => ({ name, level })),
             });
-          } catch { /* optimistic */ }
-          setLoading(false);
-          navigate('/helper-dashboard');
+            navigate('/helper-dashboard');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not save profile. Please try again.');
+            setLoading(false);
+          }
         }}>
           {/* Work Type Selection */}
           <div className="grid md:grid-cols-2 gap-4">
@@ -249,6 +253,12 @@ export default function ProfileSetupHelper() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {error}
             </div>
           )}
 

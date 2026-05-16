@@ -23,11 +23,13 @@ const MOCK_APPLICANTS = [
 
 function normaliseBooking(b: Booking) {
   const raw = b as unknown as Record<string, unknown>;
-  const helper = (raw.helper ?? raw.helperId) as Record<string, unknown> | undefined;
+  // Backend populates helperId with the full user object
+  const helper = (raw.helperId ?? raw.helper) as Record<string, unknown> | undefined;
+  const lastName = (helper?.lastName ?? '') as string;
   return {
-    id: b.id,
-    firstName: (helper?.firstName ?? 'Worker') as string,
-    lastInitial: ((helper?.lastName ?? helper?.lastInitial ?? '') as string)[0] ?? '',
+    id: (raw._id ?? b.id) as string,
+    firstName: (helper?.firstName ?? 'Applicant') as string,
+    lastInitial: lastName[0] ?? '',
     verified: (helper?.verified ?? false) as boolean,
     approximateLocation: (helper?.approximateLocation ?? helper?.location ?? '') as string,
     matchScore: (b.matchScore ?? 0) as number,

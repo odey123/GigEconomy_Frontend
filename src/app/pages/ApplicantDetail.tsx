@@ -55,7 +55,33 @@ export default function ApplicantDetail() {
   useEffect(() => {
     if (!applicantId) return;
     bookingsService.getById(applicantId)
-      .then(data => { if (data?.id) setApplicant(data as typeof MOCK_APPLICANT); })
+      .then(data => {
+        if (!data?.id) return;
+        const raw = data as unknown as Record<string, unknown>;
+        // helperId is populated by the backend with the full user object
+        const helper = (raw.helperId ?? raw.helper) as Record<string, unknown> | undefined;
+        const lastName = (helper?.lastName ?? '') as string;
+        setApplicant(prev => ({
+          ...prev,
+          id: data.id,
+          firstName: (helper?.firstName ?? prev.firstName) as string,
+          lastInitial: lastName[0] ?? prev.lastInitial,
+          verified: (helper?.verified ?? prev.verified) as boolean,
+          approximateLocation: (helper?.approximateLocation ?? helper?.location ?? prev.approximateLocation) as string,
+          memberSince: helper?.createdAt
+            ? new Date(helper.createdAt as string).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+            : prev.memberSince,
+          appliedAt: (data.appliedAt ?? prev.appliedAt) as string,
+          rating: (helper?.rating ?? prev.rating) as number,
+          completedGigs: (helper?.completedGigs ?? prev.completedGigs) as number,
+          totalEarnings: prev.totalEarnings,
+          matchScore: (data.matchScore ?? prev.matchScore) as number,
+          matchReasoning: (data.matchReasoning ?? prev.matchReasoning) as string,
+          coverNote: (data.coverNote ?? raw.deliverables ?? prev.coverNote) as string,
+          skills: ((helper?.skills as typeof prev.skills) ?? prev.skills),
+          reviews: prev.reviews,
+        }));
+      })
       .catch(() => {});
   }, [applicantId]);
 

@@ -12,6 +12,7 @@ export default function ProfileSetupOwner() {
   const [address, setAddress] = useState('');
   const [area, setArea] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,7 +35,7 @@ export default function ProfileSetupOwner() {
             <span className="text-sm text-[#1F5F5B]">67%</span>
           </div>
           <div className="h-2 bg-[#f3f4f6] rounded-full overflow-hidden">
-            <div className="h-full bg-[#1F5F5B] rounded-full" style={{ width: '67%' }} />
+            <div className="h-full bg-[#1F5F5B] rounded-full w-2/3" />
           </div>
         </div>
 
@@ -53,9 +54,11 @@ export default function ProfileSetupOwner() {
               location: `${address}, ${area}`,
               description,
             });
-          } catch { /* optimistic */ }
-          setLoading(false);
-          navigate('/dashboard');
+            navigate('/dashboard');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not save profile. Please try again.');
+            setLoading(false);
+          }
         }}>
           {/* Section 1: Business Info */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6">
@@ -201,6 +204,12 @@ export default function ProfileSetupOwner() {
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           {/* Submit Button */}
           <button
