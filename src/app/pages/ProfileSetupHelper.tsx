@@ -47,8 +47,12 @@ export default function ProfileSetupHelper() {
           setLoading(true);
           setError(null);
           try {
+            // UI uses 'selling'/'tasks' — backend expects 'sales'/'task'
+            const workTypes = selectedWorkTypes.map(t =>
+              t === 'selling' ? 'sales' : 'task'
+            ) as ('sales' | 'task')[];
             await profileService.createHelperProfile({
-              workTypes: selectedWorkTypes as ('sales' | 'task')[],
+              workTypes,
               skills: Object.entries(selectedSkills).map(([name, level]) => ({ name, level })),
             });
             navigate('/helper-dashboard');
