@@ -139,13 +139,16 @@ export default function MyContracts() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const home = user?.role === 'owner' ? '/dashboard' : '/helper-dashboard';
-  const [contracts, setContracts] = useState(MOCK_CONTRACTS);
+  const [contracts, setContracts] = useState<typeof MOCK_CONTRACTS>([]);
+  const [contractsLoading, setContractsLoading] = useState(true);
 
   useEffect(() => {
-    contractsService.getAll()
-      .then(data => { if (Array.isArray(data) && data.length) setContracts(data as typeof MOCK_CONTRACTS); })
-      .catch(() => {});
-  }, []);
+    const role = user?.role === 'owner' ? 'owner' : 'helper';
+    contractsService.getAll({ role })
+      .then(data => { setContracts(Array.isArray(data) ? data as typeof MOCK_CONTRACTS : []); })
+      .catch(() => {})
+      .finally(() => setContractsLoading(false));
+  }, [user]);
 
   const visible = contracts.filter(c => c.tab === activeTab);
 
