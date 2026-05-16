@@ -66,13 +66,18 @@ export default function HelperDashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
   useEffect(() => {
+    // Owners should not be on this page — redirect them to their dashboard
+    if (user?.role === 'owner') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     gigsService.getMatched()
       .then(data => { if (data?.gigs?.length) setGigs(data.gigs as typeof MOCK_GIGS); })
       .catch(() => {});
     walletService.getBalance()
       .then(w => { if (w?.balance != null) setWalletBalance(`₦${Number(w.balance).toLocaleString()}`); })
       .catch(() => {});
-  }, []);
+  }, [user, navigate]);
 
   const gigType = (g: typeof MOCK_GIGS[0]) => (g as unknown as { workType?: string }).workType ?? g.type ?? 'sales';
   const filtered = activeFilter === 'all' ? gigs : gigs.filter(g => gigType(g) === activeFilter);
@@ -197,6 +202,7 @@ export default function HelperDashboard() {
                     </div>
                   </div>
                 </div>
+                {user?.role !== 'owner' && (
                 <button
                   type="button"
                   onClick={e => { e.preventDefault(); navigate(`/gig/${gig.id}`); }}
@@ -204,6 +210,7 @@ export default function HelperDashboard() {
                 >
                   Apply
                 </button>
+                )}
               </div>
             </Link>
           ))}

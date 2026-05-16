@@ -116,16 +116,50 @@ export default function Wallet() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [accountCopied, setAccountCopied] = useState(false);
   const [balance, setBalance] = useState('₦87,500');
+  const [accountNumber, setAccountNumber] = useState('7012345678');
   const [txList, setTxList] = useState(transactions);
+
+  // Withdraw form state
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawAccount, setWithdrawAccount] = useState('');
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [withdrawMsg, setWithdrawMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Fund wallet info panel
+  const [showFundInfo, setShowFundInfo] = useState(false);
 
   useEffect(() => {
     walletService.getBalance()
-      .then(w => { if (w?.balance != null) setBalance(`₦${Number(w.balance).toLocaleString()}`); })
+      .then(w => {
+        if (w?.balance != null) setBalance(`₦${Number(w.balance).toLocaleString()}`);
+        if (w?.accountNumber) setAccountNumber(w.accountNumber);
+      })
       .catch(() => {});
     walletService.getTransactions({ limit: 20 })
       .then(data => { if (data?.transactions?.length) setTxList(data.transactions as typeof transactions); })
       .catch(() => {});
   }, []);
+
+  const handleWithdraw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWithdrawLoading(true);
+    setWithdrawMsg(null);
+    try {
+      await walletService.withdraw({
+        amount: parseFloat(withdrawAmount),
+        bankAccount: { accountNumber: withdrawAccount, bankCode: '058' }, // GTBank
+      });
+      setWithdrawMsg({ type: 'success', text: 'Withdrawal initiated successfully.' });
+      setWithdrawAmount('');
+      setWithdrawAccount('');
+      setTimeout(() => setShowWithdraw(false), 2000);
+    } catch (err) {
+      setWithdrawMsg({ type: 'error', text: err instanceof Error ? err.message : 'Withdrawal failed.' });
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
 
   const visible = txList.filter(t => {
     if (activeTab === 'credits') return t.type === 'credit';
@@ -134,7 +168,7 @@ export default function Wallet() {
   });
 
   const handleCopyAccount = () => {
-    navigator.clipboard.writeText('7012345678').catch(() => {});
+    navigator.clipboard.writeText(accountNumber).catch(() => {});
     setAccountCopied(true);
     setTimeout(() => setAccountCopied(false), 2000);
   };
@@ -194,14 +228,88 @@ export default function Wallet() {
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <button className="flex-1 bg-white text-[#1F5F5B] py-3 rounded-xl text-sm hover:bg-white/90 transition-colors">
+            <button
+              type="button"
+              onClick={() => { setShowWithdraw(true); setShowFundInfo(false); }}
+              className="flex-1 bg-white text-[#1F5F5B] py-3 rounded-xl text-sm hover:bg-white/90 transition-colors"
+            >
               Withdraw
             </button>
-            <button className="flex-1 bg-white/10 text-white py-3 rounded-xl text-sm hover:bg-white/20 transition-colors border border-white/20">
+            <button
+              type="button"
+              onClick={() => { setShowFundInfo(true); setShowWithdraw(false); }}
+              className="flex-1 bg-white/10 text-white py-3 rounded-xl text-sm hover:bg-white/20 transition-colors border border-white/20"
+            >
               Fund Wallet
             </button>
           </div>
         </div>
+
+        {/* Withdraw Form */}
+        {showWithdraw && (
+          <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+            <h2 className="text-base text-[#1a1a1a] mb-4">Withdraw to GTBank</h2>
+            <form onSubmit={handleWithdraw} className="space-y-3">
+              <div>
+                <label htmlFor="wAmount" className="block text-sm text-[#1a1a1a] mb-1.5">Amount (₦)</label>
+                <input
+                  id="wAmount" type="number" required
+                  value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)}
+                  placeholder="e.g. 5000"
+                  className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1F5F5B]"
+                />
+              </div>
+              <div>
+                <label htmlFor="wAccount" className="block text-sm text-[#1a1a1a] mb-1.5">GTBank Account Number</label>
+                <input
+                  id="wAccount" type="text" required maxLength={10}
+                  value={withdrawAccount}
+                  onChange={e => setWithdrawAccount(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="0123456789"
+                  className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1F5F5B]"
+                />
+              </div>
+              {withdrawMsg && (
+                <p className={`text-sm ${withdrawMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                  {withdrawMsg.text}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setShowWithdraw(false)}
+                  className="flex-1 py-3 border border-[#e5e7eb] text-[#6b7280] rounded-xl text-sm hover:bg-[#f9fafb] transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={withdrawLoading}
+                  className="flex-1 py-3 bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white rounded-xl text-sm transition-colors">
+                  {withdrawLoading ? 'Processing…' : 'Withdraw'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Fund Wallet Info */}
+        {showFundInfo && (
+          <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base text-[#1a1a1a]">Fund Your Wallet</h2>
+              <button type="button" onClick={() => setShowFundInfo(false)} className="text-[#6b7280] text-sm hover:text-[#1a1a1a]">✕</button>
+            </div>
+            <p className="text-sm text-[#6b7280] mb-4 leading-relaxed">
+              Transfer any amount to your Squad virtual account below. Your balance updates automatically once the transfer arrives.
+            </p>
+            <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-[#6b7280]">Account number</span>
+                <span className="text-[#1a1a1a]">{accountNumber}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[#6b7280]">Bank</span>
+                <span className="text-[#1a1a1a]">Squad / Habari MFB</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Squad-Verified Badge */}
         <div className="flex items-center gap-3 bg-white border border-[#e5e7eb] rounded-xl px-4 py-3">
