@@ -74,7 +74,8 @@ export default function HelperDashboard() {
       .catch(() => {});
   }, []);
 
-  const filtered = activeFilter === 'all' ? gigs : gigs.filter(g => g.type === activeFilter);
+  const gigType = (g: typeof MOCK_GIGS[0]) => (g as unknown as { workType?: string }).workType ?? g.type ?? 'sales';
+  const filtered = activeFilter === 'all' ? gigs : gigs.filter(g => gigType(g) === activeFilter);
 
   const matchColor = (score: number) => {
     if (score >= 90) return 'bg-[#1F5F5B] text-white';
@@ -131,26 +132,49 @@ export default function HelperDashboard() {
               to={`/gig/${gig.id}`}
               className="block bg-white border border-[#e5e7eb] rounded-xl p-5 hover:border-[#1F5F5B]/30 hover:shadow-sm transition-all"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className={`px-2.5 py-1 rounded text-xs ${
-                  gig.type === 'sales' ? 'bg-[#F4B942]/10 text-[#b5851f]' : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
-                }`}>
-                  {gig.type === 'sales' ? 'Sales' : 'Task'}
-                </span>
-                <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${matchColor(gig.matchScore)}`}>
-                  <Zap className="w-3 h-3" />
-                  {gig.matchScore}% match
-                </span>
-              </div>
-              <h3 className="text-base text-[#1a1a1a] mb-1">{gig.title}</h3>
-              <p className="text-sm text-[#6b7280] leading-relaxed mb-4 line-clamp-2">{gig.description}</p>
-              <div className="bg-[#f9fafb] rounded-lg px-4 py-3 mb-4">
-                <p className="text-xs text-[#6b7280] mb-0.5">Estimated earnings</p>
-                <p className="text-base text-[#1a1a1a]">{gig.estimatedEarnings}</p>
-                <p className="text-xs text-[#6b7280]">
-                  {gig.commission ? `${gig.commission} commission` : 'Fixed price'} · {gig.commissionNote}
-                </p>
-              </div>
+              {(() => {
+                const type = gigType(gig);
+                const isSales = type === 'sales';
+                const g = gig as unknown as {
+                  commissionPercent?: number; productPrice?: number;
+                  fixedPrice?: number; matchScore?: number; aiMatchScore?: number;
+                };
+                const matchScore = g.matchScore ?? g.aiMatchScore ?? 0;
+                const earningsText = isSales && g.commissionPercent && g.productPrice
+                  ? `₦${Math.round(g.productPrice * g.commissionPercent / 100).toLocaleString()} per sale`
+                  : g.fixedPrice
+                  ? `₦${g.fixedPrice.toLocaleString()}`
+                  : gig.estimatedEarnings;
+                const earningsSub = isSales && g.commissionPercent
+                  ? `${g.commissionPercent}% commission`
+                  : 'Fixed price';
+                return (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`px-2.5 py-1 rounded text-xs ${
+                        isSales ? 'bg-[#F4B942]/10 text-[#b5851f]' : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
+                      }`}>
+                        {isSales ? 'Sales' : 'Task'}
+                      </span>
+                      {matchScore > 0 && (
+                        <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${matchColor(matchScore)}`}>
+                          <Zap className="w-3 h-3" />
+                          {matchScore}% match
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base text-[#1a1a1a] mb-1">{gig.title}</h3>
+                    <p className="text-sm text-[#6b7280] leading-relaxed mb-4 line-clamp-2">{gig.description}</p>
+                    <div className="bg-[#f9fafb] rounded-lg px-4 py-3 mb-4">
+                      <p className="text-xs text-[#6b7280] mb-0.5">
+                        {isSales ? 'Estimated earnings per sale' : 'Fixed price'}
+                      </p>
+                      <p className="text-base text-[#1a1a1a]">{earningsText}</p>
+                      <p className="text-xs text-[#6b7280]">{earningsSub}</p>
+                    </div>
+                  </>
+                );
+              })()}
               <div className="flex items-center gap-1.5 text-sm text-[#6b7280] mb-4">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span>{gig.location}</span>
@@ -175,7 +199,7 @@ export default function HelperDashboard() {
                 </div>
                 <button
                   type="button"
-                  onClick={e => e.preventDefault()}
+                  onClick={e => { e.preventDefault(); navigate(`/gig/${gig.id}`); }}
                   className="px-5 py-2 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white text-sm rounded-lg transition-colors"
                 >
                   Apply

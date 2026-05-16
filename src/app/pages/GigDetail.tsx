@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle, MapPin, Star, Zap, ShoppingBag, Wrench, Clock, 
 import { Link, useNavigate, useParams } from 'react-router';
 import { gigsService } from '../../lib/services/gigs';
 import { bookingsService } from '../../lib/services/bookings';
+import { useAuth } from '../../context/AuthContext';
 
 const MOCK_GIG = {
   id: 1,
@@ -60,9 +61,15 @@ const similarGigs = [
 export default function GigDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner';
   const [gig, setGig] = useState(MOCK_GIG);
   const [applied, setApplied] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [deliverables, setDeliverables] = useState('');
+  const [proposedBudget, setProposedBudget] = useState('');
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -71,16 +78,23 @@ export default function GigDetail() {
       .catch(() => {});
   }, [id]);
 
-  const handleApply = async () => {
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!id) return;
     setApplying(true);
+    setApplyError(null);
     try {
-      await bookingsService.create({ jobId: id });
-    } catch {
-      // optimistic — continue either way
+      await bookingsService.create({
+        jobId: id,
+        ...(proposedBudget ? { proposedBudget: parseFloat(proposedBudget) } : {}),
+        deliverables,
+      });
+      setApplied(true);
+      setShowForm(false);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : 'Could not submit application. Please try again.');
     } finally {
       setApplying(false);
-      setApplied(true);
     }
   };
 
@@ -252,21 +266,78 @@ export default function GigDetail() {
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-4">
         <div className="max-w-2xl mx-auto">
-          {applied ? (
+          {isOwner ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/gig/${id}/applicants`)}
+              className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors"
+            >
+              View Applicants
+            </button>
+          ) : applied ? (
             <div className="flex items-center justify-center gap-2 py-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
               <CheckCircle className="w-4 h-4" />
               Application submitted!
             </div>
+          ) : showForm ? (
+            <form onSubmit={handleApply} className="space-y-3">
+              <div>
+                <label htmlFor="deliverables" className="block text-xs text-[#6b7280] mb-1.5">
+                  What will you do? <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="deliverables"
+                  required
+                  rows={3}
+                  value={deliverables}
+                  onChange={e => setDeliverables(e.target.value)}
+                  placeholder="e.g., I will sell 50 units across Lagos using my campus network…"
+                  className="w-full px-3 py-2.5 text-sm bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] resize-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="proposedBudget" className="block text-xs text-[#6b7280] mb-1.5">
+                  Proposed budget <span className="text-[#9ca3af]">(optional, ₦)</span>
+                </label>
+                <input
+                  id="proposedBudget"
+                  type="number"
+                  value={proposedBudget}
+                  onChange={e => setProposedBudget(e.target.value)}
+                  placeholder="e.g., 750"
+                  className="w-full px-3 py-2.5 text-sm bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B]"
+                />
+              </div>
+              {applyError && (
+                <p className="text-xs text-red-600">{applyError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 py-3 border border-[#e5e7eb] text-[#6b7280] rounded-xl text-sm hover:bg-[#f9fafb] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={applying}
+                  className="flex-1 py-3 bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white rounded-xl text-sm transition-colors"
+                >
+                  {applying ? 'Submitting…' : 'Submit Application'}
+                </button>
+              </div>
+            </form>
           ) : (
             <button
               type="button"
-              onClick={handleApply}
-              disabled={applying}
-              className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white py-4 rounded-xl text-base transition-colors"
+              onClick={() => setShowForm(true)}
+              className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors"
             >
-              {applying ? 'Applying…' : 'Apply for this Gig'}
+              Apply for this Gig
             </button>
           )}
+
         </div>
       </div>
     </div>

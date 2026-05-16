@@ -40,7 +40,7 @@ export default function BVNVerification() {
         address,
         beneficiaryAccount,
       });
-      navigate(user?.role === 'client' ? '/profile-setup/owner' : '/profile-setup/helper');
+      navigate(user?.role === 'owner' ? '/profile-setup/owner' : '/profile-setup/helper');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed. Please check your details match your BVN exactly.');
     } finally {

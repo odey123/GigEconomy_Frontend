@@ -26,7 +26,7 @@ export default function Login() {
     try {
       const { accessToken, refreshToken, user } = await authService.login(email, password);
       login(accessToken, refreshToken, user);
-      navigate(user.role === 'client' ? '/dashboard' : '/helper-dashboard');
+      navigate(user.role === 'owner' ? '/dashboard' : '/helper-dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
