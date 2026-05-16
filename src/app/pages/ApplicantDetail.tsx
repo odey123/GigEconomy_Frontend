@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Star, Zap, Sparkles, CheckCircle, Briefcase, Shield } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import { bookingsService } from '../../lib/services/bookings';
+import { api } from '../../lib/api';
 
 const MOCK_APPLICANT = {
   id: 'a1',
@@ -55,11 +56,25 @@ export default function ApplicantDetail() {
   useEffect(() => {
     if (!applicantId) return;
     bookingsService.getById(applicantId)
-      .then(data => {
+      .then(async data => {
         if (!data?.id) return;
         const raw = data as unknown as Record<string, unknown>;
-        // helperId is populated by the backend with the full user object
-        const helper = (raw.helperId ?? raw.helper) as Record<string, unknown> | undefined;
+        const helperIdRaw = raw.helperId ?? raw.helper;
+
+        // If helperId is a plain string ID, fetch the public reputation profile
+        let helper = typeof helperIdRaw === 'object' && helperIdRaw !== null
+          ? (helperIdRaw as Record<string, unknown>)
+          : null;
+
+        if (!helper && typeof helperIdRaw === 'string' && /^[0-9a-fA-F]{24}$/.test(helperIdRaw)) {
+          try {
+            const rep = await api.get<{ status: string; data: Record<string, unknown> }>(
+              `/api/reputation/users/${helperIdRaw}/public`
+            );
+            helper = rep?.data ?? null;
+          } catch { /* silent */ }
+        }
+
         const lastName = (helper?.lastName ?? '') as string;
         setApplicant(prev => ({
           ...prev,
@@ -72,7 +87,7 @@ export default function ApplicantDetail() {
             ? new Date(helper.createdAt as string).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
             : prev.memberSince,
           appliedAt: (data.appliedAt ?? prev.appliedAt) as string,
-          rating: (helper?.rating ?? prev.rating) as number,
+          rating: (helper?.averageRating ?? helper?.rating ?? prev.rating) as number,
           completedGigs: (helper?.completedGigs ?? prev.completedGigs) as number,
           totalEarnings: prev.totalEarnings,
           matchScore: (data.matchScore ?? prev.matchScore) as number,
