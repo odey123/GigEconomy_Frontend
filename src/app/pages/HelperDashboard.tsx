@@ -162,7 +162,7 @@ export default function HelperDashboard() {
                 const earningsText = isSales && g.commissionPercent && g.productPrice
                   ? `₦${Math.round(g.productPrice * g.commissionPercent / 100).toLocaleString()} per sale`
                   : g.fixedPrice
-                  ? `₦${g.fixedPrice.toLocaleString()}`
+                  ? `₦${Number(String(g.fixedPrice).replace(/[₦,]/g, '')).toLocaleString()}`
                   : gig.estimatedEarnings;
                 const earningsSub = isSales && g.commissionPercent
                   ? `${g.commissionPercent}% commission`

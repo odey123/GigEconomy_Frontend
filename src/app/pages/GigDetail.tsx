@@ -307,13 +307,27 @@ export default function GigDetail() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-4">
         <div className="max-w-2xl mx-auto">
           {isOwner ? (
-            <button
-              type="button"
-              onClick={() => navigate(`/gig/${id}/applicants`)}
-              className="w-full bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors"
-            >
-              View Applicants
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/gig/${id}/applicants`)}
+                className="flex-1 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors"
+              >
+                View Applicants
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!confirm('Delete this gig? This cannot be undone.')) return;
+                  const gigId = (gig as unknown as Record<string,unknown>)._id ?? id;
+                  await gigsService.delete(String(gigId)).catch(() => {});
+                  navigate('/dashboard');
+                }}
+                className="px-5 py-4 border border-red-200 text-red-600 rounded-xl text-sm hover:bg-red-50 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           ) : applied ? (
             <div className="flex items-center justify-center gap-2 py-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
               <CheckCircle className="w-4 h-4" />
