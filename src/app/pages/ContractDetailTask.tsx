@@ -192,7 +192,7 @@ export default function ContractDetailTask() {
 
           <h3 className="text-sm text-[#1a1a1a] mb-3">Requirements</h3>
           <div className="space-y-2 mb-4">
-            {contract.requirements.map((req, i) => (
+            {(contract.requirements ?? []).map((req, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <CheckCircle className="w-4 h-4 text-[#1F5F5B] flex-shrink-0 mt-0.5" />
                 <span className="text-sm text-[#6b7280]">{req}</span>
@@ -279,7 +279,7 @@ export default function ContractDetailTask() {
             <div className="mb-5">
               <p className="text-xs text-[#6b7280] mb-2">Attached files</p>
               <div className="space-y-2">
-                {contract.submittedFiles.map((file, i) => (
+                {(contract.submittedFiles ?? []).map((file, i) => (
                   <div
                     key={i}
                     className="flex items-center gap-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-3"

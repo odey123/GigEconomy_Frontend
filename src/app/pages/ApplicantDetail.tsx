@@ -174,7 +174,7 @@ export default function ApplicantDetail() {
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-3">Skills</h2>
           <div className="flex flex-wrap gap-2">
-            {applicant.skills.map((skill, i) => (
+            {(applicant.skills ?? []).map((skill, i) => (
               <span
                 key={i}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-full text-sm"
@@ -190,7 +190,7 @@ export default function ApplicantDetail() {
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-4">What other owners say</h2>
           <div className="space-y-4">
-            {applicant.reviews.map((review, i) => (
+            {(applicant.reviews ?? []).map((review, i) => (
               <div key={i} className={i > 0 ? 'pt-4 border-t border-[#f3f4f6]' : ''}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-[#1a1a1a]">{review.reviewer}</span>
@@ -205,7 +205,7 @@ export default function ApplicantDetail() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-2">
-                  {review.tags.map(tag => (
+                  {(review.tags ?? []).map(tag => (
                     <span key={tag} className="px-2.5 py-1 bg-[#1F5F5B]/5 text-[#1F5F5B] text-xs rounded-full">
                       {tag}
                     </span>

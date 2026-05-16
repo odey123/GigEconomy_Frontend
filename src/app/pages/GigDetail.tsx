@@ -223,7 +223,7 @@ export default function GigDetail() {
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-4">Requirements</h2>
           <div className="space-y-2 mb-4">
-            {gig.requirements.map((req, i) => (
+            {(gig.requirements ?? []).map((req, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <CheckCircle className="w-4 h-4 text-[#1F5F5B] flex-shrink-0 mt-0.5" />
                 <span className="text-sm text-[#6b7280]">{req}</span>
