@@ -93,7 +93,7 @@ export default function ApplicantDetail() {
           appliedAt: (data.appliedAt ?? '') as string,
           rating: (helper?.averageRating ?? helper?.rating ?? 0) as number,
           completedGigs: (helper?.completedGigs ?? 0) as number,
-          totalEarnings: prev.totalEarnings,
+          totalEarnings: '—',
           matchScore: (data.matchScore ?? 0) as number,
           matchReasoning: (data.matchReasoning ?? '') as string,
           coverNote: (data.coverNote ?? raw.deliverables ?? '') as string,

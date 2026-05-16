@@ -5,23 +5,22 @@ import { useAuth } from '../../context/AuthContext';
 import { gigsService } from '../../lib/services/gigs';
 import { walletService } from '../../lib/services/wallet';
 
-const MOCK_GIGS = [
-  { id: 1, title: 'Sell Parfait', type: 'sales', status: 'active', applicants: 12, activeWorkers: 3 },
-  { id: 2, title: 'Sew 10 Ankara Dresses', type: 'task', status: 'active', applicants: 5, activeWorkers: 1 },
-];
+const MOCK_GIGS: { id: number | string; title: string; type: string; status: string; applicants: number; activeWorkers: number }[] = [];
 const MOCK_BALANCE = '₦125,450';
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeGigs, setActiveGigs] = useState(MOCK_GIGS);
+  const [gigsLoading, setGigsLoading] = useState(true);
   const [balance, setBalance] = useState(MOCK_BALANCE);
   const [noWallet, setNoWallet] = useState(false);
 
   useEffect(() => {
     gigsService.getMine()
-      .then(data => { if (Array.isArray(data) && data.length) setActiveGigs(data as typeof MOCK_GIGS); })
-      .catch(() => {});
+      .then(data => { setActiveGigs(Array.isArray(data) ? data as typeof MOCK_GIGS : []); })
+      .catch(() => { setActiveGigs([]); })
+      .finally(() => setGigsLoading(false));
     walletService.getBalance()
       .then(w => { if (w?.balance != null) setBalance(`₦${Number(w.balance).toLocaleString()}`); })
       .catch(err => {

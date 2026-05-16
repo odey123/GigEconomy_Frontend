@@ -113,6 +113,7 @@ export default function ContractDetailSales() {
   }, [id]);
 
   // paymentUrl from Squad is already a full URL — don't prepend https://
+  const isRealUrl = contract.paymentUrl.startsWith('https://') && !contract.paymentUrl.includes('squad.pay/cbs-');
   const fullPaymentUrl = contract.paymentUrl.startsWith('http')
     ? contract.paymentUrl
     : `https://${contract.paymentUrl}`;
@@ -136,6 +137,7 @@ export default function ContractDetailSales() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               aria-label="Go back"
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
@@ -184,7 +186,7 @@ export default function ContractDetailSales() {
             </div>
           </div>
 
-          <button className="w-full flex items-center justify-center gap-2 bg-white text-[#1F5F5B] py-3 rounded-xl text-sm transition-colors hover:bg-white/90">
+          <button type="button" className="w-full flex items-center justify-center gap-2 bg-white text-[#1F5F5B] py-3 rounded-xl text-sm transition-colors hover:bg-white/90">
             <Wallet className="w-4 h-4" />
             Withdraw Earnings
           </button>
@@ -210,6 +212,7 @@ export default function ContractDetailSales() {
               {/* Actions */}
               <div className="flex gap-3 mb-4">
                 <button
+                  type="button"
                   onClick={handleCopy}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm transition-colors ${
                     copied
@@ -221,6 +224,7 @@ export default function ContractDetailSales() {
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
                 <button
+                  type="button"
                   onClick={handleShare}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[#e5e7eb] text-[#1a1a1a] text-sm hover:bg-[#f9fafb] transition-colors"
                 >
