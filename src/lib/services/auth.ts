@@ -13,7 +13,7 @@ export interface SignupPayload {
   email: string;
   phone: string;
   password: string;
-  role: 'owner' | 'helper';
+  role: 'client' | 'worker';
 }
 
 export const authService = {

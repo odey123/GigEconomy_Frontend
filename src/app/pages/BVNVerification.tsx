@@ -20,7 +20,7 @@ export default function BVNVerification() {
     setError(null);
     try {
       await walletService.create({ bvn, fullName, dateOfBirth: dob });
-      navigate(user?.role === 'owner' ? '/profile-setup/owner' : '/profile-setup/helper');
+      navigate(user?.role === 'client' ? '/profile-setup/owner' : '/profile-setup/helper');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed. Please check your details.');
     } finally {

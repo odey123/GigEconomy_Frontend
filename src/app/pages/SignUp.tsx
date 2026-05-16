@@ -44,7 +44,7 @@ export default function SignUp() {
         email,
         phone: `234${phone.replace(/^0/, '')}`,
         password,
-        role: accountType === 'business' ? 'owner' : 'helper',
+        role: accountType === 'business' ? 'client' : 'worker',
       });
       login(accessToken, refreshToken, user);
       navigate('/verify-bvn');
