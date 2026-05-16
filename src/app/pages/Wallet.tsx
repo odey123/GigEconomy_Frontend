@@ -120,7 +120,7 @@ export default function Wallet() {
 
   useEffect(() => {
     walletService.getBalance()
-      .then(w => { if (w?.balance != null) setBalance(`₦${w.balance.toLocaleString()}`); })
+      .then(w => { if (w?.balance != null) setBalance(`₦${Number(w.balance).toLocaleString()}`); })
       .catch(() => {});
     walletService.getTransactions({ limit: 20 })
       .then(data => { if (data?.transactions?.length) setTxList(data.transactions as typeof transactions); })

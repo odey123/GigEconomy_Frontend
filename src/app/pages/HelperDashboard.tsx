@@ -70,7 +70,7 @@ export default function HelperDashboard() {
       .then(data => { if (data?.gigs?.length) setGigs(data.gigs as typeof MOCK_GIGS); })
       .catch(() => {});
     walletService.getBalance()
-      .then(w => { if (w?.balance != null) setWalletBalance(`₦${w.balance.toLocaleString()}`); })
+      .then(w => { if (w?.balance != null) setWalletBalance(`₦${Number(w.balance).toLocaleString()}`); })
       .catch(() => {});
   }, []);
 

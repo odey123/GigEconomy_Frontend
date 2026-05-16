@@ -1,5 +1,10 @@
 import { api } from '../api';
-import type { Wallet, Transaction } from '../../types';
+import type { Transaction } from '../../types';
+
+export interface WalletBalance {
+  balance: number;
+  accountNumber: string;
+}
 
 export interface TransactionsPage {
   transactions: Transaction[];
@@ -7,12 +12,20 @@ export interface TransactionsPage {
 }
 
 export const walletService = {
-  create: (payload: { bvn: string; fullName: string; dateOfBirth: string }) =>
-    api.post<Wallet>('/api/users/wallet/create', payload),
+  create: async (payload: { bvn: string; fullName: string; dateOfBirth: string }) => {
+    // Response: { status, message, data: { wallet: { ... } } }
+    return api.post<{ status: string; message: string }>('/api/users/wallet/create', payload);
+  },
 
-  getBalance: () => api.get<Wallet>('/api/users/wallet/balance'),
+  getBalance: async (): Promise<WalletBalance> => {
+    // Response: { status, data: { balance: { balance, accountNumber } } }
+    const raw = await api.get<{ status: string; data: { balance: WalletBalance } }>(
+      '/api/users/wallet/balance',
+    );
+    return raw.data.balance;
+  },
 
-  getTransactions: (params?: { limit?: number; offset?: number }) => {
+  getTransactions: async (params?: { limit?: number; offset?: number }): Promise<TransactionsPage> => {
     const q = new URLSearchParams(
       Object.fromEntries(
         Object.entries(params ?? {})
@@ -20,11 +33,14 @@ export const walletService = {
           .map(([k, v]) => [k, String(v)]),
       ),
     ).toString();
-    return api.get<TransactionsPage>(`/api/users/wallet/transactions${q ? `?${q}` : ''}`);
+    // Response: { status, data: { transactions, total, limit, offset } }
+    const raw = await api.get<{
+      status: string;
+      data: { transactions: Transaction[]; total: number };
+    }>(`/api/users/wallet/transactions${q ? `?${q}` : ''}`);
+    return { transactions: raw.data.transactions ?? [], total: raw.data.total ?? 0 };
   },
 
-  withdraw: (payload: {
-    amount: number;
-    bankAccount: { accountNumber: string; bankCode: string };
-  }) => api.post<void>('/api/users/wallet/withdraw', payload),
+  withdraw: (payload: { amount: number; bankAccount: { accountNumber: string; bankCode: string } }) =>
+    api.post<{ status: string; message: string }>('/api/users/wallet/withdraw', payload),
 };

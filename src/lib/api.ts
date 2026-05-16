@@ -23,21 +23,18 @@ function getToken() {
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const isFormData = body instanceof FormData;
 
-  const headers: Record<string, string> = {
-    ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-    ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!isFormData) headers['Content-Type'] = 'application/json';
+
+  const init: RequestInit = {
+    method,
+    headers,
+    body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
   };
 
-  const buildInit = (tok: string | null): RequestInit => ({
-    method,
-    headers: {
-      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
-      ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
-    },
-    body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
-  });
-
-  let res = await fetch(`${BASE_URL}${path}`, buildInit(getToken()));
+  let res = await fetch(`${BASE_URL}${path}`, init);
 
   // Silently refresh on 401 and retry once
   if (res.status === 401) {
@@ -49,10 +46,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         body: JSON.stringify({ refreshToken: refresh }),
       });
       if (refreshRes.ok) {
-        const { accessToken } = await refreshRes.json();
-        localStorage.setItem('access_token', accessToken);
-        headers.Authorization = `Bearer ${accessToken}`;
-        res = await fetch(`${BASE_URL}${path}`, buildInit(accessToken));
+        // Backend returns { status, data: { token, refreshToken } }
+        const json = await refreshRes.json();
+        const newToken: string = json?.data?.token ?? json?.token;
+        localStorage.setItem('access_token', newToken);
+        headers['Authorization'] = `Bearer ${newToken}`;
+        res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
       } else {
         ['access_token', 'refresh_token', 'user'].forEach(k => localStorage.removeItem(k));
         window.location.href = '/login';

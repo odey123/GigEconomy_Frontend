@@ -22,7 +22,7 @@ export default function OwnerDashboard() {
       .then(data => { if (Array.isArray(data) && data.length) setActiveGigs(data as typeof MOCK_GIGS); })
       .catch(() => {});
     walletService.getBalance()
-      .then(w => { if (w?.balance != null) setBalance(`₦${w.balance.toLocaleString()}`); })
+      .then(w => { if (w?.balance != null) setBalance(`₦${Number(w.balance).toLocaleString()}`); })
       .catch(() => {});
   }, []);
 

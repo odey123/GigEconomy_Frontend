@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { authService } from '../../lib/services/auth';
@@ -12,12 +12,17 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [coldStart, setColdStart] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const coldStartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setColdStart(false);
+    // Show cold-start notice after 6 seconds — Render free tier can take ~50s to wake up
+    coldStartTimer.current = setTimeout(() => setColdStart(true), 6000);
     try {
       const { accessToken, refreshToken, user } = await authService.login(email, password);
       login(accessToken, refreshToken, user);
@@ -25,6 +30,8 @@ export default function Login() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
+      if (coldStartTimer.current) clearTimeout(coldStartTimer.current);
+      setColdStart(false);
       setLoading(false);
     }
   };
@@ -36,6 +43,19 @@ export default function Login() {
           <h1 className="text-3xl md:text-4xl mb-3 text-[#1a1a1a]">Welcome back</h1>
           <p className="text-[#6b7280]">Sign in to continue to your account</p>
         </div>
+
+        {coldStart && (
+          <div className="mb-5 px-4 py-3 bg-[#F4B942]/10 border border-[#F4B942]/40 rounded-lg text-sm text-[#b5851f] flex items-start gap-2">
+            <span className="mt-0.5 flex h-3 w-3 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-[#F4B942] opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-[#F4B942]" />
+            </span>
+            <span>
+              The server is waking up — this can take up to 50 seconds on first load.
+              Hang tight, your request is still going through.
+            </span>
+          </div>
+        )}
 
         {error && (
           <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
