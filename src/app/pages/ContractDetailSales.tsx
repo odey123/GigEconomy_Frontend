@@ -88,30 +88,44 @@ export default function ContractDetailSales() {
 
   useEffect(() => {
     if (!id) return;
+    // Fetch full contract to get salesData.paymentUrl (the Squad checkout URL)
+    contractsService.getById(id)
+      .then(data => {
+        const raw = data as unknown as Record<string, unknown>;
+        const salesData = raw.salesData as Record<string, unknown> | undefined;
+        const payUrl = (salesData?.paymentUrl ?? raw.paymentUrl) as string | undefined;
+        if (payUrl) setContract(prev => ({ ...prev, paymentUrl: payUrl }));
+      })
+      .catch(() => {});
+    // Fetch earnings figures separately
     contractsService.getSalesEarnings(id)
       .then(data => {
-        if (data?.totalSales != null) {
+        if (data?.totalEarnings != null) {
           setContract(prev => ({
             ...prev,
             totalEarnings: data.totalEarnings ?? prev.totalEarnings,
             totalSales: data.totalSales ?? prev.totalSales,
             commissionRate: data.commissionRate ?? prev.commissionRate,
-            paymentUrl: data.paymentUrl || prev.paymentUrl,
           }));
         }
       })
       .catch(() => {});
   }, [id]);
 
+  // paymentUrl from Squad is already a full URL — don't prepend https://
+  const fullPaymentUrl = contract.paymentUrl.startsWith('http')
+    ? contract.paymentUrl
+    : `https://${contract.paymentUrl}`;
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(`https://${contract.paymentUrl}`).catch(() => {});
+    navigator.clipboard.writeText(fullPaymentUrl).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: 'My payment link', url: `https://${contract.paymentUrl}` }).catch(() => {});
+      navigator.share({ title: 'My payment link', url: fullPaymentUrl }).catch(() => {});
     }
   };
 
@@ -190,7 +204,7 @@ export default function ContractDetailSales() {
               {/* URL */}
               <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-3 mb-3">
                 <p className="text-xs text-[#6b7280] mb-0.5">Your unique link</p>
-                <p className="text-sm text-[#1a1a1a] break-all">{contract.paymentUrl}</p>
+                <p className="text-sm text-[#1a1a1a] break-all">{fullPaymentUrl}</p>
               </div>
 
               {/* Actions */}

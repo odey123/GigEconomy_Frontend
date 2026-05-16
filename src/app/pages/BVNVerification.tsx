@@ -4,13 +4,23 @@ import { useNavigate } from 'react-router';
 import { walletService } from '../../lib/services/wallet';
 import { useAuth } from '../../context/AuthContext';
 
+// HTML date input returns YYYY-MM-DD — Squad requires mm/dd/yyyy
+function toSquadDob(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+  return `${month}/${day}/${year}`;
+}
+
 export default function BVNVerification() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [bvn, setBvn] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [middleName, setMiddleName] = useState('');
   const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
+  const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,10 +29,19 @@ export default function BVNVerification() {
     setLoading(true);
     setError(null);
     try {
-      await walletService.create({ bvn, fullName, dateOfBirth: dob });
+      await walletService.create({
+        bvn,
+        firstName,
+        lastName,
+        middleName,
+        dateOfBirth: toSquadDob(dob), // converts to mm/dd/yyyy
+        gender,                         // "1" = Male, "2" = Female
+        address,
+        beneficiaryAccount: '',
+      });
       navigate(user?.role === 'client' ? '/profile-setup/owner' : '/profile-setup/helper');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed. Please check your details.');
+      setError(err instanceof Error ? err.message : 'Verification failed. Please check your details match your BVN exactly.');
     } finally {
       setLoading(false);
     }
@@ -41,13 +60,13 @@ export default function BVNVerification() {
           </p>
         </div>
 
-        <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4 mb-8">
+        <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4 mb-6">
           <h3 className="text-sm mb-2 text-[#1a1a1a] flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-[#1F5F5B]" />
-            Why we need this
+            Details must match your BVN exactly
           </h3>
           <p className="text-sm text-[#6b7280] leading-relaxed">
-            Your BVN confirms you're real, protects everyone you do business with, and gives you access to a verified wallet for receiving payments.
+            Squad validates your name, date of birth, and gender against the BVN database. Use the exact same spelling and date registered with your bank.
           </p>
         </div>
 
@@ -57,42 +76,103 @@ export default function BVNVerification() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* BVN */}
           <div>
             <label htmlFor="bvn" className="block text-sm mb-2 text-[#1a1a1a]">
               Bank Verification Number (BVN)
             </label>
             <input
-              type="text" id="bvn" maxLength={11} required
-              value={bvn} onChange={e => setBvn(e.target.value)}
+              type="text" id="bvn" maxLength={11} minLength={11} required
+              value={bvn} onChange={e => setBvn(e.target.value.replace(/\D/g, ''))}
               className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
               placeholder="12345678901"
             />
             <p className="text-xs text-[#6b7280] mt-1">11 digits</p>
           </div>
 
+          {/* First Name + Last Name */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="firstName" className="block text-sm mb-2 text-[#1a1a1a]">
+                First Name
+              </label>
+              <input
+                type="text" id="firstName" required
+                value={firstName} onChange={e => setFirstName(e.target.value)}
+                className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+                placeholder="As on BVN"
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-sm mb-2 text-[#1a1a1a]">
+                Last Name
+              </label>
+              <input
+                type="text" id="lastName" required
+                value={lastName} onChange={e => setLastName(e.target.value)}
+                className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+                placeholder="As on BVN"
+              />
+            </div>
+          </div>
+
+          {/* Middle Name (optional) */}
           <div>
-            <label htmlFor="fullName" className="block text-sm mb-2 text-[#1a1a1a]">
-              Full Name (as on BVN)
+            <label htmlFor="middleName" className="block text-sm mb-2 text-[#1a1a1a]">
+              Middle Name <span className="text-[#6b7280]">(optional)</span>
             </label>
             <input
-              type="text" id="fullName" required
-              value={fullName} onChange={e => setFullName(e.target.value)}
+              type="text" id="middleName"
+              value={middleName} onChange={e => setMiddleName(e.target.value)}
               className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
-              placeholder="Enter your full name"
+              placeholder="Leave blank if none"
             />
           </div>
 
+          {/* Date of Birth + Gender */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="dob" className="block text-sm mb-2 text-[#1a1a1a]">
+                Date of Birth
+              </label>
+              <input
+                type="date" id="dob" required
+                value={dob} onChange={e => setDob(e.target.value)}
+                className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+              />
+              <p className="text-xs text-[#6b7280] mt-1">As registered with your bank</p>
+            </div>
+            <div>
+              <label htmlFor="gender" className="block text-sm mb-2 text-[#1a1a1a]">
+                Gender
+              </label>
+              <select
+                id="gender" required
+                value={gender} onChange={e => setGender(e.target.value)}
+                className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+              >
+                <option value="">Select</option>
+                <option value="1">Male</option>
+                <option value="2">Female</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Address */}
           <div>
-            <label htmlFor="dob" className="block text-sm mb-2 text-[#1a1a1a]">Date of Birth</label>
+            <label htmlFor="address" className="block text-sm mb-2 text-[#1a1a1a]">
+              Home Address
+            </label>
             <input
-              type="date" id="dob" required
-              value={dob} onChange={e => setDob(e.target.value)}
+              type="text" id="address" required
+              value={address} onChange={e => setAddress(e.target.value)}
               className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+              placeholder="123 Lagos Street, Lagos"
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2 py-4">
+          <div className="flex items-center justify-center gap-2 py-3">
             <div className="w-8 h-8 bg-[#1F5F5B] rounded flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
