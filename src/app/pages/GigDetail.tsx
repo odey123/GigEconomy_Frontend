@@ -78,6 +78,17 @@ export default function GigDetail() {
     gigsService.getById(id)
       .then(data => { if (data?.id) setGig(data as typeof MOCK_GIG); })
       .catch(() => {});
+    // Check if worker already applied to this gig
+    bookingsService.getMy({ role: 'worker' })
+      .then(data => {
+        const alreadyApplied = data?.bookings?.some(b => {
+          const raw = b as unknown as Record<string, unknown>;
+          const gigId = (raw.gigId as Record<string, unknown>)?._id ?? raw.gigId ?? raw.jobId;
+          return String(gigId) === String(id);
+        });
+        if (alreadyApplied) setApplied(true);
+      })
+      .catch(() => {});
   }, [id]);
 
   const handleApply = async (e: React.FormEvent) => {
@@ -99,7 +110,13 @@ export default function GigDetail() {
       setApplied(true);
       setShowForm(false);
     } catch (err) {
-      setApplyError(err instanceof Error ? err.message : 'Could not submit application. Please try again.');
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('already applied') || msg.toLowerCase().includes('already applied')) {
+        setApplied(true);
+        setShowForm(false);
+      } else {
+        setApplyError(msg || 'Could not submit application. Please try again.');
+      }
     } finally {
       setApplying(false);
     }
