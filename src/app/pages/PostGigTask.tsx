@@ -8,7 +8,8 @@ export default function PostGigTask() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [skillLevel, setSkillLevel] = useState('');
+  const [skillLevel, setSkillLevel] = useState('any');
+  const [skillCategory, setSkillCategory] = useState('');
   const [loading, setLoading] = useState(false);
 
   return (
@@ -35,10 +36,13 @@ export default function PostGigTask() {
                 try {
                   await gigsService.create({
                     workType: 'task',
+                    category: skillCategory || 'general',
                     title,
                     description,
+                    location: 'Lagos, Nigeria',
+                    skillLevelRequired: skillLevel || 'any',
+                    evidenceRequired: 'none',
                     fixedPrice: parseFloat(price) || 0,
-                    skillLevel: skillLevel as 'beginner' | 'intermediate' | 'expert' | 'none',
                   });
                 } catch { /* optimistic — navigate regardless */ }
                 setLoading(false);
@@ -108,6 +112,8 @@ export default function PostGigTask() {
                 </label>
                 <select
                   id="skillCategory"
+                  value={skillCategory}
+                  onChange={e => setSkillCategory(e.target.value)}
                   className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                   required
                 >

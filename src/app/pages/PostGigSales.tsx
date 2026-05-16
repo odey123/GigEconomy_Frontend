@@ -37,11 +37,17 @@ export default function PostGigSales() {
                 try {
                   await gigsService.create({
                     workType: 'sales',
+                    category: 'marketing',
                     title: `Sell ${productName}`,
+                    description: `Commission-based sales gig. Sell ${productName} and earn ${commission}% on every unit sold.`,
+                    location: 'Lagos, Nigeria',
+                    skillLevelRequired: 'any',
+                    evidenceRequired: 'none',
                     productName,
                     productPrice: parseFloat(productPrice) || 0,
                     commissionPercent: commission,
                     stockAvailable: parseInt(stock) || 0,
+                    starterStockValue: parseInt(stock) * (parseFloat(productPrice) || 0),
                   });
                 } catch { /* optimistic — navigate regardless */ }
                 setLoading(false);
