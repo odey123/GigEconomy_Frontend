@@ -5,10 +5,23 @@ import { profileService } from '../../lib/services/profile';
 
 export default function ProfileSetupHelper() {
   const navigate = useNavigate();
-  const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
-  const [selectedSkills, setSelectedSkills] = useState<{ [key: string]: string }>({});
+  // Pre-populate from localStorage if user already filled this in
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('helper_profile') ?? 'null'); } catch { return null; } })();
+
+  const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>(
+    saved?.openTo?.map((t: string) => t === 'sales' ? 'selling' : 'tasks') ?? []
+  );
+  const [selectedSkills, setSelectedSkills] = useState<{ [key: string]: string }>(saved?.skillLevels ?? {});
+  const [location, setLocation] = useState<string>(saved?.location ?? '');
+  const [languages, setLanguages] = useState<string>(saved?.languages ?? '');
+  const [selectedNetworks, setSelectedNetworks] = useState<string[]>(saved?.networks ?? []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleNetwork = (network: string) =>
+    setSelectedNetworks(prev =>
+      prev.includes(network) ? prev.filter(n => n !== network) : [...prev, network]
+    );
 
   const toggleWorkType = (type: string) => {
     setSelectedWorkTypes(prev =>
@@ -60,6 +73,9 @@ export default function ProfileSetupHelper() {
               openTo,
               skills: Object.keys(selectedSkills),
               skillLevels: selectedSkills,
+              location,
+              languages,
+              networks: selectedNetworks,
             }));
             navigate('/helper-dashboard');
           } catch (err) {
@@ -141,6 +157,8 @@ export default function ProfileSetupHelper() {
                   <input
                     type="text"
                     id="location"
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 bg-white border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                     placeholder="e.g., Yaba, Lagos"
                   />
@@ -157,6 +175,8 @@ export default function ProfileSetupHelper() {
                   <input
                     type="text"
                     id="languages"
+                    value={languages}
+                    onChange={e => setLanguages(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 bg-white border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
                     placeholder="e.g., English, Yoruba, Igbo"
                   />
@@ -170,8 +190,15 @@ export default function ProfileSetupHelper() {
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {['Hostel', 'Office area', 'Church', 'Market', 'Campus', 'Gym', 'Salon', 'Other'].map(network => (
-                    <label key={network} className="flex items-center gap-2 p-3 bg-white border border-[#e5e7eb] rounded-lg cursor-pointer hover:bg-white/80">
-                      <input type="checkbox" className="w-4 h-4 rounded border-[#e5e7eb] text-[#1F5F5B] focus:ring-2 focus:ring-[#1F5F5B]" />
+                    <label key={network} className={`flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer transition-colors ${
+                      selectedNetworks.includes(network) ? 'border-[#1F5F5B] bg-[#1F5F5B]/5' : 'border-[#e5e7eb] hover:bg-white/80'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedNetworks.includes(network)}
+                        onChange={() => toggleNetwork(network)}
+                        className="w-4 h-4 rounded border-[#e5e7eb] text-[#1F5F5B] focus:ring-2 focus:ring-[#1F5F5B]"
+                      />
                       <span className="text-sm text-[#1a1a1a]">{network}</span>
                     </label>
                   ))}

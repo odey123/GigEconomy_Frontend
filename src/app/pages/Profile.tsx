@@ -169,6 +169,28 @@ export default function Profile() {
                 ))}
               </div>
             </div>
+            {helperProfile.location && (
+              <div className="flex items-center justify-between px-5 py-4">
+                <p className="text-sm text-[#6b7280]">Based in</p>
+                <p className="text-sm text-[#1a1a1a]">{helperProfile.location}</p>
+              </div>
+            )}
+            {helperProfile.languages && (
+              <div className="flex items-center justify-between px-5 py-4">
+                <p className="text-sm text-[#6b7280]">Languages</p>
+                <p className="text-sm text-[#1a1a1a]">{helperProfile.languages}</p>
+              </div>
+            )}
+            {helperProfile.networks?.length > 0 && (
+              <div className="px-5 py-4">
+                <p className="text-sm text-[#6b7280] mb-2">Customer networks</p>
+                <div className="flex gap-2 flex-wrap">
+                  {helperProfile.networks.map((n: string) => (
+                    <span key={n} className="px-3 py-1 bg-[#f9fafb] border border-[#e5e7eb] text-sm rounded-full text-[#1a1a1a]">{n}</span>
+                  ))}
+                </div>
+              </div>
+            )}
             {helperProfile.skills?.length > 0 && (
               <div className="px-5 py-4">
                 <p className="text-sm text-[#6b7280] mb-2">Skills</p>
