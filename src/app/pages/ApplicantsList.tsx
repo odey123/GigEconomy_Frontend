@@ -1,72 +1,72 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Star, Zap, Sparkles, ChevronRight } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { bookingsService } from '../../lib/services/bookings';
+import type { Booking } from '../../types';
 
 type SortKey = 'match' | 'rating' | 'recent';
 
-const mockApplicants = [
+const MOCK_APPLICANTS = [
   {
-    id: 'a1',
-    firstName: 'Tobi',
-    lastInitial: 'A',
-    verified: true,
-    approximateLocation: 'Yaba, Lagos',
-    matchScore: 94,
-    coverNote:
-      "I live in Unilag hostel block C and already sell drinks to my floor. I can easily move 30+ parfait cups a week through my existing customer network. I'm reliable and will send daily sales updates.",
-    rating: 4.9,
-    completedGigs: 18,
-    appliedAt: '2 hours ago',
+    id: 'a1', firstName: 'Tobi', lastInitial: 'A', verified: true,
+    approximateLocation: 'Yaba, Lagos', matchScore: 94,
+    coverNote: "I live in Unilag hostel block C and already sell drinks to my floor.",
+    rating: 4.9, completedGigs: 18, appliedAt: '2 hours ago',
   },
   {
-    id: 'a2',
-    firstName: 'Chioma',
-    lastInitial: 'O',
-    verified: true,
-    approximateLocation: 'Surulere, Lagos',
-    matchScore: 81,
-    coverNote:
-      "I'm a 300-level student with strong connections across three hostels. I've done commission sales before for a skincare brand and hit target every month. Very organized.",
-    rating: 4.7,
-    completedGigs: 11,
-    appliedAt: '5 hours ago',
-  },
-  {
-    id: 'a3',
-    firstName: 'Bayo',
-    lastInitial: 'K',
-    verified: false,
-    approximateLocation: 'Mushin, Lagos',
-    matchScore: 67,
-    coverNote:
-      "I sell snacks on campus already and my customers always ask about new products. Parfait would be an easy add-on. I'm available every day after 2pm.",
-    rating: 4.3,
-    completedGigs: 5,
-    appliedAt: '1 day ago',
-  },
-  {
-    id: 'a4',
-    firstName: 'Aisha',
-    lastInitial: 'M',
-    verified: true,
-    approximateLocation: 'Akoka, Lagos',
-    matchScore: 76,
-    coverNote:
-      "I'm president of my department's student union, so I have a strong network. I'm looking for flexible income that fits around my lectures and I'm great with money tracking.",
-    rating: 4.6,
-    completedGigs: 8,
-    appliedAt: '1 day ago',
+    id: 'a2', firstName: 'Chioma', lastInitial: 'O', verified: true,
+    approximateLocation: 'Surulere, Lagos', matchScore: 81,
+    coverNote: "I'm a 300-level student with strong connections across three hostels.",
+    rating: 4.7, completedGigs: 11, appliedAt: '5 hours ago',
   },
 ];
 
-const gigTitle = 'Sell Parfait at Unilag Campus';
+function normaliseBooking(b: Booking) {
+  const raw = b as unknown as Record<string, unknown>;
+  const helper = (raw.helper ?? raw.helperId) as Record<string, unknown> | undefined;
+  return {
+    id: b.id,
+    firstName: (helper?.firstName ?? 'Worker') as string,
+    lastInitial: ((helper?.lastName ?? helper?.lastInitial ?? '') as string)[0] ?? '',
+    verified: (helper?.verified ?? false) as boolean,
+    approximateLocation: (helper?.approximateLocation ?? helper?.location ?? '') as string,
+    matchScore: (b.matchScore ?? 0) as number,
+    coverNote: (b.coverNote ?? (raw.deliverables as string) ?? '') as string,
+    rating: (helper?.rating ?? 0) as number,
+    completedGigs: (helper?.completedGigs ?? 0) as number,
+    appliedAt: b.appliedAt ?? '',
+  };
+}
 
 export default function ApplicantsList() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [sort, setSort] = useState<SortKey>('match');
+  const [applicants, setApplicants] = useState(MOCK_APPLICANTS);
+  const [gigTitle, setGigTitle] = useState('Your Gig');
 
-  const sorted = [...mockApplicants].sort((a, b) => {
+  useEffect(() => {
+    bookingsService.getMy({ role: 'client', status: 'pending' })
+      .then(data => {
+        if (data?.bookings?.length) {
+          const filtered = data.bookings.filter(b => {
+            const raw = b as unknown as Record<string, unknown>;
+            return (raw.gigId as Record<string, unknown>)?._id === id
+              || (raw.gigId as string) === id
+              || (raw.jobId as string) === id;
+          });
+          if (filtered.length) {
+            setApplicants(filtered.map(normaliseBooking));
+            const first = filtered[0] as unknown as Record<string, unknown>;
+            const gigData = first.gigId as Record<string, unknown> | undefined;
+            if (gigData?.title) setGigTitle(gigData.title as string);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [id]);
+
+  const sorted = [...applicants].sort((a, b) => {
     if (sort === 'match') return b.matchScore - a.matchScore;
     if (sort === 'rating') return b.rating - a.rating;
     return 0;
@@ -80,7 +80,6 @@ export default function ApplicantsList() {
 
   return (
     <div className="min-h-screen bg-[#f9fafb] pb-8">
-      {/* Top Bar */}
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <button
@@ -99,11 +98,9 @@ export default function ApplicantsList() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-        {/* Summary Row */}
-        {/* api.get('/bookings/my?gigId=...&status=pending') */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-[#6b7280]">
-            <span className="text-[#1a1a1a] font-medium">{mockApplicants.length}</span> pending bookings
+            <span className="text-[#1a1a1a] font-medium">{sorted.length}</span> applicant{sorted.length !== 1 ? 's' : ''}
           </p>
           <select
             aria-label="Sort applicants"
@@ -117,7 +114,6 @@ export default function ApplicantsList() {
           </select>
         </div>
 
-        {/* AI Banner */}
         <div className="flex items-start gap-3 bg-[#1F5F5B]/5 border border-[#1F5F5B]/15 rounded-xl px-4 py-3">
           <Sparkles className="w-4 h-4 text-[#1F5F5B] flex-shrink-0 mt-0.5" />
           <p className="text-xs text-[#1F5F5B] leading-relaxed">
@@ -125,7 +121,6 @@ export default function ApplicantsList() {
           </p>
         </div>
 
-        {/* Applicant Cards */}
         <div className="space-y-3">
           {sorted.map(applicant => (
             <Link
@@ -134,50 +129,56 @@ export default function ApplicantsList() {
               className="block bg-white border border-[#e5e7eb] rounded-xl p-5 hover:border-[#1F5F5B]/30 hover:shadow-sm transition-all"
             >
               <div className="flex items-start gap-3">
-                {/* Avatar */}
                 <div className="w-11 h-11 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-base text-[#1F5F5B] flex-shrink-0">
                   {applicant.firstName?.[0] ?? '?'}
                 </div>
-
                 <div className="flex-1 min-w-0">
-                  {/* Name row */}
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm text-[#1a1a1a]">
-                        {applicant.firstName} {applicant.lastInitial}.
+                        {applicant.firstName} {applicant.lastInitial ? `${applicant.lastInitial}.` : ''}
                       </span>
                       {applicant.verified && (
-                        <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-[#1F5F5B]/8 rounded text-xs text-[#1F5F5B]">
+                        <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-[#1F5F5B]/10 rounded text-xs text-[#1F5F5B]">
                           ✓ Verified
                         </span>
                       )}
                     </div>
-                    <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${matchBadgeColor(applicant.matchScore)}`}>
-                      <Zap className="w-3 h-3" />
-                      {applicant.matchScore}%
-                    </span>
+                    {applicant.matchScore > 0 && (
+                      <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${matchBadgeColor(applicant.matchScore)}`}>
+                        <Zap className="w-3 h-3" />
+                        {applicant.matchScore}%
+                      </span>
+                    )}
                   </div>
 
-                  {/* Location */}
-                  <div className="flex items-center gap-1 text-xs text-[#6b7280] mb-2">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>{applicant.approximateLocation}</span>
-                  </div>
+                  {applicant.approximateLocation && (
+                    <div className="flex items-center gap-1 text-xs text-[#6b7280] mb-2">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{applicant.approximateLocation}</span>
+                    </div>
+                  )}
 
-                  {/* Cover note preview */}
-                  <p className="text-sm text-[#6b7280] leading-relaxed line-clamp-2 mb-3">
-                    "{applicant.coverNote}"
-                  </p>
+                  {applicant.coverNote && (
+                    <p className="text-sm text-[#6b7280] leading-relaxed line-clamp-2 mb-3">
+                      "{applicant.coverNote}"
+                    </p>
+                  )}
 
-                  {/* Footer row */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-xs text-[#6b7280]">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 text-[#F4B942] fill-[#F4B942]" />
-                        {applicant.rating} · {applicant.completedGigs} gigs
-                      </span>
-                      <span className="text-[#d1d5db]">·</span>
-                      <span>{applicant.appliedAt}</span>
+                      {applicant.rating > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 text-[#F4B942] fill-[#F4B942]" />
+                          {applicant.rating} · {applicant.completedGigs} gigs
+                        </span>
+                      )}
+                      {applicant.appliedAt && (
+                        <>
+                          <span className="text-[#d1d5db]">·</span>
+                          <span>{applicant.appliedAt}</span>
+                        </>
+                      )}
                     </div>
                     <span className="flex items-center gap-1 text-xs text-[#1F5F5B]">
                       View <ChevronRight className="w-3.5 h-3.5" />

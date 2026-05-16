@@ -179,27 +179,37 @@ export default function GigDetail() {
 
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <h2 className="text-base text-[#1a1a1a] mb-4">Pay breakdown</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6]">
-              <span className="text-sm text-[#6b7280]">Pay type</span>
-              <span className="text-sm text-[#1a1a1a]">
-                {gig.commission ? `${gig.commission} commission` : `Fixed — ${gig.fixedPrice}`}
-              </span>
-            </div>
-            {gig.pricePerUnit && (
-              <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6]">
-                <span className="text-sm text-[#6b7280]">Price per unit</span>
-                <span className="text-sm text-[#1a1a1a]">{gig.pricePerUnit}</span>
+          {(() => {
+            const g = gig as unknown as Record<string, unknown>;
+            const isSales = (g.workType ?? g.type) === 'sales';
+            const commission = (g.commissionPercent ?? g.commission) as number | string | undefined;
+            const productPrice = (g.productPrice ?? g.pricePerUnit) as number | string | undefined;
+            const fixedPrice = g.fixedPrice as number | undefined;
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6]">
+                  <span className="text-sm text-[#6b7280]">Pay type</span>
+                  <span className="text-sm text-[#1a1a1a]">
+                    {isSales && commission ? `${commission}% commission` : fixedPrice ? `Fixed — ₦${Number(fixedPrice).toLocaleString()}` : '—'}
+                  </span>
+                </div>
+                {isSales && productPrice && (
+                  <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6]">
+                    <span className="text-sm text-[#6b7280]">Price per unit</span>
+                    <span className="text-sm text-[#1a1a1a]">₦{Number(productPrice).toLocaleString()}</span>
+                  </div>
+                )}
+                {isSales && commission && productPrice && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-sm text-[#6b7280]">You earn per sale</span>
+                    <p className="text-base text-[#1F5F5B]">
+                      ₦{Math.round(Number(productPrice) * Number(commission) / 100).toLocaleString()}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-sm text-[#6b7280]">Estimated weekly earnings</span>
-              <div className="text-right">
-                <p className="text-base text-[#1F5F5B]">{gig.estimatedEarnings}</p>
-                <p className="text-xs text-[#6b7280]">{gig.earningsNote}</p>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
@@ -214,8 +224,10 @@ export default function GigDetail() {
               <MapPin className="w-5 h-5 text-[#1F5F5B]" />
             </div>
             <div>
-              <p className="text-sm text-[#1a1a1a] mb-0.5">{gig.location}</p>
-              <p className="text-xs text-[#6b7280]">{gig.locationNote}</p>
+              <p className="text-sm text-[#1a1a1a] mb-0.5">{gig.location ?? gig.approximateLocation ?? '—'}</p>
+              {(gig as unknown as Record<string,unknown>).locationNote && (
+                <p className="text-xs text-[#6b7280]">{(gig as unknown as Record<string,unknown>).locationNote as string}</p>
+              )}
             </div>
           </div>
         </div>
@@ -232,11 +244,15 @@ export default function GigDetail() {
           </div>
           <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4">
             <p className="text-xs text-[#6b7280] mb-1">Skill level</p>
-            <p className="text-sm text-[#1a1a1a]">{gig.skillLevel}</p>
+            <p className="text-sm text-[#1a1a1a]">
+              {(gig as unknown as Record<string,unknown>).skillLevelRequired as string ?? gig.skillLevel ?? '—'}
+            </p>
           </div>
           <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4 mt-3">
             <p className="text-xs text-[#6b7280] mb-1">What to submit with application</p>
-            <p className="text-sm text-[#1a1a1a]">{gig.evidenceRequired}</p>
+            <p className="text-sm text-[#1a1a1a]">
+              {(gig as unknown as Record<string,unknown>).evidenceRequired as string ?? '—'}
+            </p>
           </div>
         </div>
 
