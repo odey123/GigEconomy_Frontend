@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, MapPin, Star, Zap, ShoppingBag, Wrench, Clock, Shield, ChevronRight } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useLocation } from 'react-router';
 import { gigsService } from '../../lib/services/gigs';
 import { bookingsService } from '../../lib/services/bookings';
 import { useAuth } from '../../context/AuthContext';
@@ -61,9 +61,11 @@ const similarGigs = [
 export default function GigDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const isOwner = user?.role === 'owner';
-  const [gig, setGig] = useState(MOCK_GIG);
+  // Use gig passed from the list if available — avoids showing mock while API loads
+  const [gig, setGig] = useState((location.state as { gig?: typeof MOCK_GIG })?.gig ?? MOCK_GIG);
   const [applied, setApplied] = useState(false);
   const [applying, setApplying] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -80,10 +82,12 @@ export default function GigDetail() {
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Use gig.id (normalised from _id by the API) not the URL param
-    // which could be a mock value like '1'
     const jobId = (gig as unknown as { _id?: string })._id ?? gig.id;
-    if (!jobId) return;
+    // MongoDB ObjectIds are 24-char hex strings — block mock IDs like 1, 2, 3
+    if (!jobId || !/^[0-9a-fA-F]{24}$/.test(String(jobId))) {
+      setApplyError('This is a demo gig — go back to the dashboard and apply to a real posted gig.');
+      return;
+    }
     setApplying(true);
     setApplyError(null);
     try {

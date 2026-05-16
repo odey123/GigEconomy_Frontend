@@ -135,6 +135,7 @@ export default function HelperDashboard() {
             <Link
               key={gig.id}
               to={`/gig/${gig.id}`}
+              state={{ gig }}
               className="block bg-white border border-[#e5e7eb] rounded-xl p-5 hover:border-[#1F5F5B]/30 hover:shadow-sm transition-all"
             >
               {(() => {
@@ -205,7 +206,7 @@ export default function HelperDashboard() {
                 {user?.role !== 'owner' && (
                 <button
                   type="button"
-                  onClick={e => { e.preventDefault(); navigate(`/gig/${gig.id}`); }}
+                  onClick={e => { e.preventDefault(); navigate(`/gig/${gig.id}`, { state: { gig } }); }}
                   className="px-5 py-2 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white text-sm rounded-lg transition-colors"
                 >
                   Apply
