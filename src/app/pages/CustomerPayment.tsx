@@ -96,7 +96,7 @@ export default function CustomerPayment() {
             {/* Product image placeholder */}
             <div className="w-full h-40 bg-[#F4B942]/10 rounded-lg flex flex-col items-center justify-center mb-4">
               <div className="w-16 h-16 bg-[#F4B942]/20 rounded-full flex items-center justify-center mb-2">
-                <span className="text-3xl">🍧</span>
+                <div className="w-12 h-12 bg-[#F4B942]/30 rounded-full" />
               </div>
               <p className="text-xs text-[#6b7280]">Product image</p>
             </div>

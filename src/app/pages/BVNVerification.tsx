@@ -210,7 +210,7 @@ export default function BVNVerification() {
         </form>
 
         <div className="mt-6 text-center text-xs text-[#6b7280]">
-          <p>🔒 Your information is encrypted and never shared without your permission</p>
+          <p>Your information is encrypted and never shared without your permission</p>
         </div>
       </div>
     </div>

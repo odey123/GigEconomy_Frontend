@@ -142,7 +142,7 @@ export default function ApplicantsList() {
                       </span>
                       {applicant.verified && (
                         <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-[#1F5F5B]/10 rounded text-xs text-[#1F5F5B]">
-                          ✓ Verified
+                          Verified
                         </span>
                       )}
                     </div>

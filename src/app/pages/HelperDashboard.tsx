@@ -96,7 +96,7 @@ export default function HelperDashboard() {
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl text-[#1a1a1a]">Hi, {user?.firstName ?? 'Chioma'} 👋</h1>
+            <h1 className="text-xl text-[#1a1a1a]">Hi, {user?.firstName ?? 'Chioma'}</h1>
             <p className="text-sm text-[#6b7280]">Here's what's matched for you</p>
           </div>
           <div className="flex items-center gap-3">
