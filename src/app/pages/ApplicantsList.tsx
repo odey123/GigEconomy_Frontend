@@ -23,12 +23,15 @@ const MOCK_APPLICANTS = [
 
 function normaliseBooking(b: Booking) {
   const raw = b as unknown as Record<string, unknown>;
-  // Backend populates helperId with the full user object
-  const helper = (raw.helperId ?? raw.helper) as Record<string, unknown> | undefined;
+  // helperId may be a populated object or just an ID string
+  const helper = typeof raw.helperId === 'object' && raw.helperId !== null
+    ? (raw.helperId as Record<string, unknown>)
+    : (raw.helper as Record<string, unknown> | undefined);
   const lastName = (helper?.lastName ?? '') as string;
+  const firstName = (helper?.firstName ?? helper?.name ?? '') as string;
   return {
     id: (raw._id ?? b.id) as string,
-    firstName: (helper?.firstName ?? 'Applicant') as string,
+    firstName: firstName || 'Worker',
     lastInitial: lastName[0] ?? '',
     verified: (helper?.verified ?? false) as boolean,
     approximateLocation: (helper?.approximateLocation ?? helper?.location ?? '') as string,
@@ -44,7 +47,8 @@ export default function ApplicantsList() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [sort, setSort] = useState<SortKey>('match');
-  const [applicants, setApplicants] = useState(MOCK_APPLICANTS);
+  const [applicants, setApplicants] = useState<typeof MOCK_APPLICANTS>([]);
+  const [loading, setLoading] = useState(true);
   const [gigTitle, setGigTitle] = useState('Your Gig');
 
   useEffect(() => {
@@ -53,19 +57,19 @@ export default function ApplicantsList() {
         if (data?.bookings?.length) {
           const filtered = data.bookings.filter(b => {
             const raw = b as unknown as Record<string, unknown>;
-            return (raw.gigId as Record<string, unknown>)?._id === id
-              || (raw.gigId as string) === id
-              || (raw.jobId as string) === id;
+            const gigId = (raw.gigId as Record<string, unknown>)?._id ?? raw.gigId ?? raw.jobId;
+            return String(gigId) === String(id);
           });
-          if (filtered.length) {
-            setApplicants(filtered.map(normaliseBooking));
-            const first = filtered[0] as unknown as Record<string, unknown>;
-            const gigData = first.gigId as Record<string, unknown> | undefined;
-            if (gigData?.title) setGigTitle(gigData.title as string);
-          }
+          setApplicants(filtered.length ? filtered.map(normaliseBooking) : MOCK_APPLICANTS);
+          const first = filtered[0] as unknown as Record<string, unknown> | undefined;
+          const gigData = first?.gigId as Record<string, unknown> | undefined;
+          if (gigData?.title) setGigTitle(gigData.title as string);
+        } else {
+          setApplicants(MOCK_APPLICANTS);
         }
       })
-      .catch(() => {});
+      .catch(() => setApplicants(MOCK_APPLICANTS))
+      .finally(() => setLoading(false));
   }, [id]);
 
   const sorted = [...applicants].sort((a, b) => {
@@ -100,7 +104,10 @@ export default function ApplicantsList() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-        <div className="flex items-center justify-between">
+        {loading && (
+          <div className="text-center py-12 text-sm text-[#6b7280]">Loading applicants…</div>
+        )}
+        {!loading && <div className="flex items-center justify-between">
           <p className="text-sm text-[#6b7280]">
             <span className="text-[#1a1a1a] font-medium">{sorted.length}</span> applicant{sorted.length !== 1 ? 's' : ''}
           </p>
@@ -191,6 +198,7 @@ export default function ApplicantsList() {
             </Link>
           ))}
         </div>
+        </div>}
       </div>
     </div>
   );
