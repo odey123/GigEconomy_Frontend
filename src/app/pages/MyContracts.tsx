@@ -150,10 +150,23 @@ export default function MyContracts() {
       .finally(() => setContractsLoading(false));
   }, [user]);
 
-  const visible = contracts.filter(c => c.tab === activeTab);
+  // Map real API status → tab. Real contracts use 'status', mock use 'tab'
+  function contractTab(c: Contract): TabKey {
+    const raw = c as unknown as Record<string, unknown>;
+    const status = (raw.status ?? c.tab ?? 'active') as string;
+    if (status === 'disputed') return 'disputed';
+    if (status === 'completed' || status === 'approved') return 'completed';
+    return 'active'; // pending, active, escrow-funded, work-submitted
+  }
 
-  const contractLink = (c: Contract) =>
-    c.type === 'task' ? `/contracts/${c.id}/task` : `/contracts/${c.id}`;
+  const visible = contracts.filter(c => contractTab(c) === activeTab);
+
+  const contractLink = (c: Contract) => {
+    const raw = c as unknown as Record<string, unknown>;
+    const type = (raw.workType ?? raw.bookingType ?? c.type) as string;
+    const cid = (raw._id ?? c.id) as string;
+    return type === 'task' ? `/contracts/${cid}/task` : `/contracts/${cid}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#f9fafb] pb-24">
@@ -190,36 +203,47 @@ export default function MyContracts() {
         </div>
 
         {/* Contract List */}
-        {visible.length > 0 ? (
+        {contractsLoading ? (
+          <div className="text-center py-12 text-sm text-[#6b7280]">Loading contracts…</div>
+        ) : visible.length > 0 ? (
           <div className="space-y-3">
             {visible.map(c => {
-              const cfg = statusConfig[c.status];
+              const raw = c as unknown as Record<string, unknown>;
+              const type = ((raw.workType ?? raw.bookingType ?? c.type) as string) ?? 'sales';
+              const isSales = type === 'sales';
+              const rawStatus = (raw.status ?? c.status ?? 'active') as string;
+              const cfg = statusConfig[rawStatus as ContractStatus] ?? statusConfig['active'];
+              // Extract title/counterparty from real API shape
+              const gigData = raw.gigId as Record<string, unknown> | undefined;
+              const title = (gigData?.title ?? c.title ?? 'Contract') as string;
+              const ownerData = raw.ownerId as Record<string, unknown> | undefined;
+              const helperData = raw.helperId as Record<string, unknown> | undefined;
+              const isOwner = user?.role === 'owner';
+              const counterpartyData = isOwner ? helperData : ownerData;
+              const counterparty = counterpartyData
+                ? `${counterpartyData.firstName ?? ''} ${counterpartyData.lastName ?? ''}`.trim() || c.counterparty
+                : c.counterparty;
+              const metric = isSales
+                ? (raw.helperEarnings != null ? `₦${Number(raw.helperEarnings).toLocaleString()}` : c.metric)
+                : (raw.totalAmount != null ? `₦${Number(raw.totalAmount).toLocaleString()}` : c.metric);
+              const startedAt = raw.createdAt
+                ? new Date(raw.createdAt as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : c.startedAt;
               return (
                 <Link
-                  key={c.id}
+                  key={(raw._id ?? c.id) as string}
                   to={contractLink(c)}
                   className="block bg-white border border-[#e5e7eb] rounded-xl p-5 hover:border-[#1F5F5B]/30 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    {/* Type tag */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs ${
-                          c.type === 'sales'
-                            ? 'bg-[#F4B942]/10 text-[#b5851f]'
-                            : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
-                        }`}
-                      >
-                        {c.type === 'sales' ? (
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                        ) : (
-                          <Wrench className="w-3.5 h-3.5" />
-                        )}
-                        {c.type === 'sales' ? 'Sales' : 'Task'}
+                      <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs ${
+                        isSales ? 'bg-[#F4B942]/10 text-[#b5851f]' : 'bg-[#1F5F5B]/10 text-[#1F5F5B]'
+                      }`}>
+                        {isSales ? <ShoppingBag className="w-3.5 h-3.5" /> : <Wrench className="w-3.5 h-3.5" />}
+                        {isSales ? 'Sales' : 'Task'}
                       </span>
-                      <span
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs ${cfg.pill}`}
-                      >
+                      <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs ${cfg.pill}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                         {cfg.label}
                       </span>
@@ -227,24 +251,20 @@ export default function MyContracts() {
                     <ChevronRight className="w-5 h-5 text-[#d1d5db] flex-shrink-0 mt-0.5" />
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-base text-[#1a1a1a] mb-1 leading-snug">{c.title}</h3>
+                  <h3 className="text-base text-[#1a1a1a] mb-1 leading-snug">{title}</h3>
 
-                  {/* Counterparty */}
                   <p className="text-sm text-[#6b7280] mb-3">
-                    with{' '}
-                    <span className="text-[#1a1a1a]">{c.counterparty}</span>
+                    with <span className="text-[#1a1a1a]">{counterparty}</span>
                   </p>
 
-                  {/* Footer row */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-base text-[#1F5F5B]">{c.metric}</p>
+                      <p className="text-base text-[#1F5F5B]">{metric}</p>
                       <p className="text-xs text-[#6b7280]">{c.metricLabel}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-[#6b7280]">Started</p>
-                      <p className="text-xs text-[#1a1a1a]">{c.startedAt}</p>
+                      <p className="text-xs text-[#1a1a1a]">{startedAt}</p>
                     </div>
                   </div>
                 </Link>
