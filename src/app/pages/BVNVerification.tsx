@@ -21,6 +21,7 @@ export default function BVNVerification() {
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [address, setAddress] = useState('');
+  const [beneficiaryAccount, setBeneficiaryAccount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +38,7 @@ export default function BVNVerification() {
         dateOfBirth: toSquadDob(dob),
         gender,
         address,
+        beneficiaryAccount,
       });
       navigate(user?.role === 'client' ? '/profile-setup/owner' : '/profile-setup/helper');
     } catch (err) {
@@ -169,6 +171,26 @@ export default function BVNVerification() {
               className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
               placeholder="123 Lagos Street, Lagos"
             />
+          </div>
+
+          {/* GTBank Settlement Account */}
+          <div>
+            <label htmlFor="beneficiaryAccount" className="block text-sm mb-2 text-[#1a1a1a]">
+              GTBank Account Number
+            </label>
+            <input
+              type="text" id="beneficiaryAccount" required
+              value={beneficiaryAccount}
+              onChange={e => setBeneficiaryAccount(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              maxLength={10}
+              pattern="\d{10}"
+              title="Must be exactly 10 digits"
+              className="w-full px-4 py-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] focus:border-transparent"
+              placeholder="0123456789"
+            />
+            <p className="text-xs text-[#6b7280] mt-1">
+              Squad will settle payments into this account
+            </p>
           </div>
 
           <div className="flex items-center justify-center gap-2 py-3">
