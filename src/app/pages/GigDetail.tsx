@@ -73,6 +73,14 @@ export default function GigDetail() {
   const [proposedBudget, setProposedBudget] = useState('');
   const [applyError, setApplyError] = useState<string | null>(null);
 
+  // Edit state
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     gigsService.getById(id)
@@ -119,6 +127,35 @@ export default function GigDetail() {
       }
     } finally {
       setApplying(false);
+    }
+  };
+
+  const openEdit = () => {
+    const raw = gig as unknown as Record<string, unknown>;
+    setEditTitle((gig.title ?? '') as string);
+    setEditDescription((gig.description ?? '') as string);
+    setEditPrice(String(raw.productPrice ?? raw.fixedPrice ?? gig.fixedPrice ?? ''));
+    setEditing(true);
+    setEditError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const gigId = String((gig as unknown as Record<string,unknown>)._id ?? gig.id ?? id);
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const raw = gig as unknown as Record<string, unknown>;
+      const isSales = ((raw.workType ?? gig.type) as string) === 'sales';
+      const payload: Record<string, unknown> = { title: editTitle, description: editDescription };
+      if (editPrice) payload[isSales ? 'productPrice' : 'fixedPrice'] = parseFloat(editPrice);
+      await gigsService.update(gigId, payload as never);
+      setGig(prev => ({ ...prev, title: editTitle, description: editDescription }));
+      setEditing(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Could not save changes.');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -307,26 +344,74 @@ export default function GigDetail() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-4">
         <div className="max-w-2xl mx-auto">
           {isOwner ? (
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => navigate(`/gig/${id}/applicants`)}
-                className="flex-1 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-base transition-colors"
-              >
-                View Applicants
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!confirm('Delete this gig? This cannot be undone.')) return;
-                  const gigId = (gig as unknown as Record<string,unknown>)._id ?? id;
-                  await gigsService.delete(String(gigId)).catch(() => {});
-                  navigate('/dashboard');
-                }}
-                className="px-5 py-4 border border-red-200 text-red-600 rounded-xl text-sm hover:bg-red-50 transition-colors"
-              >
-                Delete
-              </button>
+            <div className="space-y-3">
+              {editing ? (
+                <form onSubmit={handleSaveEdit} className="space-y-3">
+                  <div>
+                    <label htmlFor="edit-title" className="block text-xs text-[#6b7280] mb-1.5">Title</label>
+                    <input
+                      id="edit-title" type="text" required
+                      value={editTitle} onChange={e => setEditTitle(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B]"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="edit-desc" className="block text-xs text-[#6b7280] mb-1.5">Description</label>
+                    <textarea
+                      id="edit-desc" rows={3}
+                      value={editDescription} onChange={e => setEditDescription(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B] resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="edit-price" className="block text-xs text-[#6b7280] mb-1.5">
+                      {((gig as unknown as Record<string,unknown>).workType ?? gig.type) === 'sales' ? 'Product price (₦)' : 'Fixed price (₦)'}
+                    </label>
+                    <input
+                      id="edit-price" type="number"
+                      value={editPrice} onChange={e => setEditPrice(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm bg-[#f9fafb] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F5F5B]"
+                    />
+                  </div>
+                  {editError && <p className="text-xs text-red-600">{editError}</p>}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setEditing(false)}
+                      className="flex-1 py-3 border border-[#e5e7eb] text-[#6b7280] rounded-xl text-sm hover:bg-[#f9fafb] transition-colors">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={editSaving}
+                      className="flex-1 py-3 bg-[#1F5F5B] hover:bg-[#1a4f4c] disabled:opacity-60 text-white rounded-xl text-sm transition-colors">
+                      {editSaving ? 'Saving…' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/gig/${id}/applicants`)}
+                    className="flex-1 bg-[#1F5F5B] hover:bg-[#1a4f4c] text-white py-4 rounded-xl text-sm transition-colors"
+                  >
+                    View Applicants
+                  </button>
+                  <button type="button" onClick={openEdit}
+                    className="px-5 py-4 border border-[#e5e7eb] text-[#1a1a1a] rounded-xl text-sm hover:bg-[#f9fafb] transition-colors">
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm('Delete this gig? This cannot be undone.')) return;
+                      const gigId = (gig as unknown as Record<string,unknown>)._id ?? id;
+                      await gigsService.delete(String(gigId)).catch(() => {});
+                      navigate('/dashboard');
+                    }}
+                    className="px-5 py-4 border border-red-200 text-red-600 rounded-xl text-sm hover:bg-red-50 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ) : applied ? (
             <div className="flex items-center justify-center gap-2 py-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
