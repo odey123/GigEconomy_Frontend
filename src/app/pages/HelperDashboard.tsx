@@ -160,7 +160,7 @@ export default function HelperDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-xs text-[#1F5F5B]">
-                    {gig.businessName[0]}
+                    {gig.businessName?.[0] ?? '?'}
                   </div>
                   <div>
                     <div className="flex items-center gap-1">

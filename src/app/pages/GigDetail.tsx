@@ -132,7 +132,7 @@ export default function GigDetail() {
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-lg text-[#1F5F5B]">
-              {gig.businessName[0]}
+              {gig.businessName?.[0] ?? '?'}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-1.5 mb-0.5">

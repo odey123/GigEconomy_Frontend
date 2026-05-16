@@ -84,6 +84,7 @@ export default function ApplicantsList() {
       <div className="bg-white border-b border-[#e5e7eb] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <button
+            type="button"
             aria-label="Go back"
             onClick={() => navigate('/dashboard')}
             className="p-2 hover:bg-[#f9fafb] rounded-lg transition-colors"
@@ -135,7 +136,7 @@ export default function ApplicantsList() {
               <div className="flex items-start gap-3">
                 {/* Avatar */}
                 <div className="w-11 h-11 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-base text-[#1F5F5B] flex-shrink-0">
-                  {applicant.firstName[0]}
+                  {applicant.firstName?.[0] ?? '?'}
                 </div>
 
                 <div className="flex-1 min-w-0">

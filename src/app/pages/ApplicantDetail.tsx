@@ -100,7 +100,7 @@ export default function ApplicantDetail() {
         <div className="bg-white border border-[#e5e7eb] rounded-xl p-5">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-14 h-14 bg-[#1F5F5B]/10 rounded-full flex items-center justify-center text-xl text-[#1F5F5B] flex-shrink-0">
-              {applicant.firstName[0]}
+              {applicant.firstName?.[0] ?? '?'}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
