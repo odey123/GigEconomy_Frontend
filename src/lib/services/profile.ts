@@ -10,9 +10,8 @@ export const profileService = {
   }) => api.post<OwnerProfile>('/api/users/me/owner-profile', payload),
 
   createHelperProfile: (payload: {
-    workTypes: string[];
-    skills?: { name: string; level: string }[];
-    networks?: string[];
-    availability?: { days: string[]; from: string; to: string };
+    openTo: ('sales' | 'task')[];   // required — "sales" | "task" | both
+    skills?: string[];
+    preferredRadius?: number;
   }) => api.post<HelperProfile>('/api/users/me/helper-profile', payload),
 };
