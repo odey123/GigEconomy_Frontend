@@ -62,7 +62,8 @@ export default function HelperDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [gigs, setGigs] = useState(MOCK_GIGS);
-  const [walletBalance, setWalletBalance] = useState('₦32,700');
+  const [walletBalance, setWalletBalance] = useState<string | null>(null);
+  const [noWallet, setNoWallet] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
   useEffect(() => {
@@ -76,7 +77,9 @@ export default function HelperDashboard() {
       .catch(() => {});
     walletService.getBalance()
       .then(w => { if (w?.balance != null) setWalletBalance(`₦${Number(w.balance).toLocaleString()}`); })
-      .catch(() => {});
+      .catch(err => {
+        if (err?.message?.toLowerCase().includes('wallet')) setNoWallet(true);
+      });
   }, [user, navigate]);
 
   const gigType = (g: typeof MOCK_GIGS[0]) => (g as unknown as { workType?: string }).workType ?? g.type ?? 'sales';
@@ -101,10 +104,20 @@ export default function HelperDashboard() {
               <Bell className="w-6 h-6 text-[#6b7280]" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-[#F4B942] rounded-full" />
             </button>
-            <div className="flex items-center gap-2 px-4 py-2 bg-[#1F5F5B]/5 rounded-lg">
-              <Wallet className="w-5 h-5 text-[#1F5F5B]" />
-              <span className="text-sm text-[#1a1a1a]">{walletBalance}</span>
-            </div>
+            {noWallet ? (
+              <button
+                type="button"
+                onClick={() => navigate('/verify-bvn')}
+                className="flex items-center gap-2 px-4 py-2 bg-[#F4B942]/10 border border-[#F4B942]/40 rounded-lg text-sm text-[#b5851f]"
+              >
+                Set up wallet
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-[#1F5F5B]/5 rounded-lg">
+                <Wallet className="w-5 h-5 text-[#1F5F5B]" />
+                <span className="text-sm text-[#1a1a1a]">{walletBalance ?? '₦0'}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

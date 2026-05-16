@@ -54,6 +54,10 @@ export default function ProfileSetupOwner() {
               location: `${address}, ${area}`,
               description,
             });
+            localStorage.setItem('owner_profile', JSON.stringify({
+              businessName, businessType, description,
+              location: `${address}, ${area}`,
+            }));
             navigate('/dashboard');
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not save profile. Please try again.');

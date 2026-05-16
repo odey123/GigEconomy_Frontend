@@ -16,6 +16,7 @@ export default function OwnerDashboard() {
   const { user } = useAuth();
   const [activeGigs, setActiveGigs] = useState(MOCK_GIGS);
   const [balance, setBalance] = useState(MOCK_BALANCE);
+  const [noWallet, setNoWallet] = useState(false);
 
   useEffect(() => {
     gigsService.getMine()
@@ -23,7 +24,9 @@ export default function OwnerDashboard() {
       .catch(() => {});
     walletService.getBalance()
       .then(w => { if (w?.balance != null) setBalance(`₦${Number(w.balance).toLocaleString()}`); })
-      .catch(() => {});
+      .catch(err => {
+        if (err?.message?.toLowerCase().includes('wallet')) setNoWallet(true);
+      });
   }, []);
 
   return (
@@ -39,10 +42,20 @@ export default function OwnerDashboard() {
               <Bell className="w-6 h-6 text-[#6b7280]" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-[#F4B942] rounded-full" />
             </button>
-            <div className="flex items-center gap-2 px-4 py-2 bg-[#1F5F5B]/5 rounded-lg">
-              <Wallet className="w-5 h-5 text-[#1F5F5B]" />
-              <span className="text-sm text-[#1a1a1a]">{balance}</span>
-            </div>
+            {noWallet ? (
+              <button
+                type="button"
+                onClick={() => navigate('/verify-bvn')}
+                className="flex items-center gap-2 px-4 py-2 bg-[#F4B942]/10 border border-[#F4B942]/40 rounded-lg text-sm text-[#b5851f]"
+              >
+                Set up wallet
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-[#1F5F5B]/5 rounded-lg">
+                <Wallet className="w-5 h-5 text-[#1F5F5B]" />
+                <span className="text-sm text-[#1a1a1a]">{balance}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

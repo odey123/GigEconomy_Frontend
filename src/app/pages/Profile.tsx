@@ -17,6 +17,13 @@ export default function Profile() {
 
   const isOwner = user?.role === 'owner';
 
+  const helperProfile = (() => {
+    try { return JSON.parse(localStorage.getItem('helper_profile') ?? 'null'); } catch { return null; }
+  })();
+  const ownerProfile = (() => {
+    try { return JSON.parse(localStorage.getItem('owner_profile') ?? 'null'); } catch { return null; }
+  })();
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -148,6 +155,61 @@ export default function Profile() {
             <p className="text-sm text-[#1a1a1a]">{isOwner ? 'Business Owner' : 'Helper'}</p>
           </div>
         </div>
+
+        {/* Helper profile summary */}
+        {!isOwner && helperProfile && (
+          <div className="bg-white border border-[#e5e7eb] rounded-xl divide-y divide-[#f3f4f6]">
+            <div className="px-5 py-4">
+              <p className="text-sm text-[#6b7280] mb-1">Open to</p>
+              <div className="flex gap-2 flex-wrap mt-1">
+                {(helperProfile.openTo ?? []).map((t: string) => (
+                  <span key={t} className="px-3 py-1 bg-[#1F5F5B]/10 text-[#1F5F5B] text-xs rounded-full">
+                    {t === 'sales' ? 'Sales gigs' : 'Task gigs'}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {helperProfile.skills?.length > 0 && (
+              <div className="px-5 py-4">
+                <p className="text-sm text-[#6b7280] mb-2">Skills</p>
+                <div className="flex gap-2 flex-wrap">
+                  {helperProfile.skills.map((s: string) => (
+                    <span key={s} className="px-3 py-1 bg-[#f9fafb] border border-[#e5e7eb] text-sm rounded-full text-[#1a1a1a]">
+                      {s}
+                      {helperProfile.skillLevels?.[s] && (
+                        <span className="text-[#6b7280] ml-1">· {helperProfile.skillLevels[s]}</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Owner profile summary */}
+        {isOwner && ownerProfile && (
+          <div className="bg-white border border-[#e5e7eb] rounded-xl divide-y divide-[#f3f4f6]">
+            <div className="flex items-center justify-between px-5 py-4">
+              <p className="text-sm text-[#6b7280]">Business name</p>
+              <p className="text-sm text-[#1a1a1a]">{ownerProfile.businessName}</p>
+            </div>
+            <div className="flex items-center justify-between px-5 py-4">
+              <p className="text-sm text-[#6b7280]">Business type</p>
+              <p className="text-sm text-[#1a1a1a]">{ownerProfile.businessType}</p>
+            </div>
+            <div className="flex items-center justify-between px-5 py-4">
+              <p className="text-sm text-[#6b7280]">Location</p>
+              <p className="text-sm text-[#1a1a1a]">{ownerProfile.location}</p>
+            </div>
+            {ownerProfile.description && (
+              <div className="px-5 py-4">
+                <p className="text-sm text-[#6b7280] mb-1">Description</p>
+                <p className="text-sm text-[#1a1a1a]">{ownerProfile.description}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Logout */}
         <button

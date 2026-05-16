@@ -56,6 +56,11 @@ export default function ProfileSetupHelper() {
               skills: Object.keys(selectedSkills),
               preferredRadius: 50,
             });
+            localStorage.setItem('helper_profile', JSON.stringify({
+              openTo,
+              skills: Object.keys(selectedSkills),
+              skillLevels: selectedSkills,
+            }));
             navigate('/helper-dashboard');
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not save profile. Please try again.');
