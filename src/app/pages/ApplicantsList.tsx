@@ -104,10 +104,10 @@ export default function ApplicantsList() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-        {loading && (
+        {loading ? (
           <div className="text-center py-12 text-sm text-[#6b7280]">Loading applicants…</div>
-        )}
-        {!loading && <div className="flex items-center justify-between">
+        ) : (
+        <><div className="flex items-center justify-between">
           <p className="text-sm text-[#6b7280]">
             <span className="text-[#1a1a1a] font-medium">{sorted.length}</span> applicant{sorted.length !== 1 ? 's' : ''}
           </p>
@@ -198,7 +198,8 @@ export default function ApplicantsList() {
             </Link>
           ))}
         </div>
-        </div>}
+        </>
+        )}
       </div>
     </div>
   );
