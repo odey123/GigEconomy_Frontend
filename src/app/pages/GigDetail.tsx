@@ -80,13 +80,16 @@ export default function GigDetail() {
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    // Use gig.id (normalised from _id by the API) not the URL param
+    // which could be a mock value like '1'
+    const jobId = (gig as unknown as { _id?: string })._id ?? gig.id;
+    if (!jobId) return;
     setApplying(true);
     setApplyError(null);
     try {
       await bookingsService.create({
-        jobId: id,
-        ...(proposedBudget ? { proposedBudget: parseFloat(proposedBudget) } : {}),
+        jobId,
+        proposedBudget: parseFloat(proposedBudget),
         deliverables,
       });
       setApplied(true);
@@ -296,11 +299,13 @@ export default function GigDetail() {
               </div>
               <div>
                 <label htmlFor="proposedBudget" className="block text-xs text-[#6b7280] mb-1.5">
-                  Proposed budget <span className="text-[#9ca3af]">(optional, ₦)</span>
+                  Proposed budget (₦) <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="proposedBudget"
                   type="number"
+                  required
+                  min={1}
                   value={proposedBudget}
                   onChange={e => setProposedBudget(e.target.value)}
                   placeholder="e.g., 750"

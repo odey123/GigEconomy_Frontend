@@ -20,10 +20,11 @@ function buildQuery(params?: Record<string, string | number | undefined>) {
 
 // Backend wraps all gig objects under { _id, ... } — normalise _id → id
 function normaliseGig(g: Record<string, unknown>): Gig {
+  const mongoId = (g._id as string) ?? (g.id as string);
   return {
     ...(g as Gig),
-    id: (g._id as string) ?? (g.id as string),
-    // backend uses workType; our Gig type uses type
+    _id: mongoId,   // keep original _id so booking can use it
+    id: mongoId,
     type: ((g.workType ?? g.type) as 'sales' | 'task') ?? 'sales',
   };
 }
